@@ -1,0 +1,1 @@
+create table facts (topic varchar(255), ts timestamp, content json);
