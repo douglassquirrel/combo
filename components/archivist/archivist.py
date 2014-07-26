@@ -20,7 +20,7 @@ def store(ch, method, properties, body):
                    (topic, content))
     conn.commit()
     cursor.close()
-    connection.close()
+    conn.close()
     print 'Recorded topic %s, content %s' % (topic, content)
 
 connection = BlockingConnection(ConnectionParameters(host=RABBIT_MQ_HOST,
