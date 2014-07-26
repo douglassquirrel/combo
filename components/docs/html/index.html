@@ -60,10 +60,18 @@ SELECT content FROM facts WHERE ts > '2014-07-26 11:00:00'
   The current example implementation maintains a product catalogue for a retail
   business.
 
-    <h3>publisher_client</h3>
+    <h3>publisher</h3>
       <p>
-        Command-line tool that accepts new products for publication. Products
-        are published in this format:
+        Command-line tool that accepts new products for publication. Run a
+        command like
+        <pre><code>
+./publisher.py 1234-78 "Spotted Paint" 45.98
+        </pre></code>
+        to create a new product.
+      </p>
+
+      <p>
+        Products are published in this format:
         <pre><code>
 {"sku": "1234-78", "name": "Spotted Paint", "price": 45.98}
         </pre></code>
@@ -71,12 +79,14 @@ SELECT content FROM facts WHERE ts > '2014-07-26 11:00:00'
 
     <h3>catalogue_printer</h3>
       <p>
-        Command-line tool that prints the current product catalogue.
+        Command-line tool that prints the current product catalogue. Run
+        <code>./catalogue_printer.py</code> to print the current catalogue.
       </p>
 
     <h3>catalogue_listener</h3>
       <p>
-        Command-line tool that announces new products when added.
+        Command-line tool that announces new products when added. Run
+        <code>./catalogue_listener.py</code> to see announcements.
       </p>
 
     <h3>vat_reckoner</h3>
