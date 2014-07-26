@@ -12,16 +12,21 @@ POSTGRES_USER = 'microservices'
 POSTGRES_PASSWORD = 'microservices'
 
 def store(ch, method, properties, body):
-    topic, content = method.routing_key, body
     conn = connect(host=POSTGRES_HOST, database=POSTGRES_DATABASE, 
                    user=POSTGRES_USER, password=POSTGRES_PASSWORD)
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO facts VALUES (%s, now(), %s);',
-                   (topic, content))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    print 'Recorded topic %s, content %s' % (topic, content)
+
+    try:
+        topic, content = method.routing_key, body
+        cursor.execute('INSERT INTO facts VALUES (%s, now(), %s);',
+                       (topic, content))
+        conn.commit()
+        print 'Recorded topic %s, content %s' % (topic, content)
+    except Exception as e:
+        print e.message
+    finally:
+        cursor.close()
+        conn.close()        
 
 connection = BlockingConnection(ConnectionParameters(host=RABBIT_MQ_HOST,
                                                      port=RABBIT_MQ_PORT))
