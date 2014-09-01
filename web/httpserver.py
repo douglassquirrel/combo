@@ -1,28 +1,34 @@
-import time
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from pika import BlockingConnection, ConnectionParameters
 
-HOST_NAME = 'localhost' # !!!REMEMBER TO CHANGE THIS!!!
-PORT_NUMBER = 8080 # Maybe set this to 9000.
+WEB_HOST_NAME = 'localhost' # 
+PORT_NUMBER = 8080 
+RABBIT_HOST = '46.51.195.57'
+RABBIT_PORT = 5672
 
 class MyHandler(BaseHTTPRequestHandler):
-    def do_GET(s):
-        """Respond to a GET request."""
-        s.send_response(200)
-        s.send_header("Content-type", "text/html")
-        s.end_headers()
-        s.wfile.write("<html><head><title>Title goes here.</title></head>")
-        s.wfile.write("<body><p>This is a test.</p>")
-        # If someone went to "http://something.somewhere.net/foo/bar/",
-        # then s.path equals "/foo/bar/".
-        s.wfile.write("<p>You accessed path: %s</p>" % s.path)
-        s.wfile.write("</body></html>")
+    def do_POST(self):
+        """Publish the given fact."""
+        content_len = int(self.headers.getheader('content-length', 0))
+        fact = self.rfile.read(content_len)
+        topic = self.path.split('/')[2]
+
+        connection = BlockingConnection(ConnectionParameters(host=RABBIT_HOST,
+                                                             port=RABBIT_PORT))
+        channel = connection.channel()
+        channel.basic_publish(exchange='',
+                              routing_key=topic,
+                              body=fact)
+        connection.close()
+
+        self.send_response(202)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
 
 if __name__ == '__main__':
-    httpd = HTTPServer((HOST_NAME, PORT_NUMBER), MyHandler)
-    print time.asctime(), "Server Starts - %s:%s" % (HOST_NAME, PORT_NUMBER)
+    httpd = HTTPServer((WEB_HOST_NAME, PORT_NUMBER), MyHandler)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
     httpd.server_close()
-    print time.asctime(), "Server Stops - %s:%s" % (HOST_NAME, PORT_NUMBER)
