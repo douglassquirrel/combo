@@ -4,3 +4,4 @@ sudo apt-get -y install python-pip
 sudo apt-get -y install libpq-dev
 
 sudo pip install pika
+sudo pip install psycopg2
