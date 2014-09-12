@@ -3,7 +3,7 @@ from pika import BlockingConnection, ConnectionParameters
 
 WEB_HOST_NAME = 'localhost' # 
 PORT_NUMBER = 8080 
-RABBIT_HOST = '46.51.195.57'
+RABBIT_HOST = '54.72.124.130'
 RABBIT_PORT = 5672
 
 class MyHandler(BaseHTTPRequestHandler):
