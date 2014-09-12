@@ -2,6 +2,14 @@ Installation on fresh install of Ubuntu Linux 14.04 and Postgres
 
 AWS: set up RDS Postgres instance and EC2 Ubuntu instance
 
+Postgres:
+
+    CREATE TABLE facts (
+        topic character varying(255),
+        ts timestamp without time zone,
+        content json
+    );
+
 On EC2 instance:
 
     sudo apt-get update
