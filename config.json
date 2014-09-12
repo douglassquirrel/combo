@@ -1,0 +1,10 @@
+{"exchange": "combo",
+ "rabbit_host": "54.76.117.95",
+ "rabbit_port": 5672,
+ "pg_host": "microservices-chris-10sep2014.cc9uedlzx2lk.eu-west-1.rds.amazonaws.com",
+ "pg_database": "micro",
+ "pg_user": "microservices",
+ "pg_password": "microservices",
+ "web_host": "localhost", 
+ "web_port": 8080 
+}

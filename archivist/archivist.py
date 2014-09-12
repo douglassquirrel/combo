@@ -1,19 +1,16 @@
 #! /usr/bin/env python
 
+from json import load
 from pika import BlockingConnection, ConnectionParameters
 from psycopg2 import connect
+from sys import argv
 
-RABBIT_MQ_HOST = '54.76.183.35'
-RABBIT_MQ_PORT = 5672
-
-POSTGRES_HOST = 'microservices.cc9uedlzx2lk.eu-west-1.rds.amazonaws.com'
-POSTGRES_DATABASE = 'micro'
-POSTGRES_USER = 'microservices'
-POSTGRES_PASSWORD = 'microservices'
+with open(argv[1]) as config_file:
+    config = load(config_file)
 
 def store(ch, method, properties, body):
-    conn = connect(host=POSTGRES_HOST, database=POSTGRES_DATABASE, 
-                   user=POSTGRES_USER, password=POSTGRES_PASSWORD)
+    conn = connect(host=config['pg_host'], database=config['pg_database'], 
+                   user=config['pg_user'], password=config['pg_password'])
     cursor = conn.cursor()
 
     try:
@@ -28,16 +25,16 @@ def store(ch, method, properties, body):
         cursor.close()
         conn.close()        
 
-connection = BlockingConnection(ConnectionParameters(host=RABBIT_MQ_HOST,
-                                                     port=RABBIT_MQ_PORT))
-channel = connection.channel()
+conn = BlockingConnection(ConnectionParameters(host=config['rabbit_host'],
+                                               port=config['rabbit_port']))
+channel = conn.channel()
 
-channel.exchange_declare(exchange='alex2', type='topic')
+channel.exchange_declare(exchange=config['exchange'], type='topic')
 
 result = channel.queue_declare(exclusive=True)
 queue = result.method.queue
 
-channel.queue_bind(exchange='alex2', queue=queue, routing_key='*')
+channel.queue_bind(exchange=config['exchange'], queue=queue, routing_key='*')
 
 channel.basic_consume(store, queue=queue, no_ack=True)
 channel.start_consuming()

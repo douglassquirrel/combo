@@ -1,10 +1,10 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from json import load
 from pika import BlockingConnection, ConnectionParameters
+from sys import argv
 
-WEB_HOST_NAME = 'localhost' # 
-PORT_NUMBER = 8080 
-RABBIT_HOST = '54.72.124.130'
-RABBIT_PORT = 5672
+with open(argv[1]) as config_file:
+    config = load(config_file)
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -13,8 +13,8 @@ class MyHandler(BaseHTTPRequestHandler):
         fact = self.rfile.read(content_len)
         topic = self.path.split('/')[2]
 
-        connection = BlockingConnection(ConnectionParameters(host=RABBIT_HOST,
-                                                             port=RABBIT_PORT))
+        connection = BlockingConnection(ConnectionParameters(host=config['rabbit_host'],
+                                                             port=config['rabbit_port']))
         channel = connection.channel()
         channel.basic_publish(exchange='',
                               routing_key=topic,
@@ -26,7 +26,7 @@ class MyHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
 if __name__ == '__main__':
-    httpd = HTTPServer((WEB_HOST_NAME, PORT_NUMBER), MyHandler)
+    httpd = HTTPServer((config['web_host'], config['web_port']), MyHandler)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
