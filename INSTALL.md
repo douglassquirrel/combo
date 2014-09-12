@@ -3,6 +3,7 @@ Installation on fresh install of Ubuntu Linux 14.04 and Postgres
 AWS: set up RDS Postgres instance and EC2 Ubuntu instance
 
 On EC2 instance:
+
     sudo apt-get update
     sudo apt-get install git
     git clone https://github.com/douglassquirrel/combo.git
