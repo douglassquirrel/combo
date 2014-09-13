@@ -7,13 +7,14 @@ from psycopg2 import connect
 from SocketServer import ForkingMixIn
 from sys import argv
 from time import time as now
+from traceback import print_exc
 from urlparse import urlparse, parse_qs
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
 LAST_TEN_SQL = '''
     SELECT id, topic, ts, content FROM
         (SELECT id, topic, round(extract(epoch from ts)) AS ts, content
-             FROM facts ORDER BY id DESC LIMIT 10)
+             FROM facts WHERE topic = %s ORDER BY id DESC LIMIT 10)
         AS lastten
     ORDER BY id ASC;
 '''
@@ -86,28 +87,31 @@ class MyHandler(BaseHTTPRequestHandler):
             self.end_headers()
             dump(topics, self.wfile)
         except Exception as e:
-            print e.message
+            print 'Exception: %s' % e.message
+            print_exc()
         finally:
             cursor.close()
             conn.close()
 
-    def facts_since(self, topic, id=None):
+    def facts_since(self, topic, ident=None):
+        print "topic %s, id %s" % (topic, ident)
         """Get all facts for topic since the given id, or last 10 if None"""
         conn = connect(host=config['pg_host'], database=config['pg_database'],
                        user=config['pg_user'], password=config['pg_password'])
         cursor = conn.cursor()
         try:
-            if id is None:
-                cursor.execute(LAST_TEN_SQL, topic)
+            if ident is None:
+                cursor.execute(LAST_TEN_SQL, (topic,))
             else:
-                cursor.execute(SINCE_ID_SQL, topic, id)
+                cursor.execute(SINCE_ID_SQL, (topic, ident))
             facts = cursor.fetchall()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             dump(facts, self.wfile)
         except Exception as e:
-            print e.message
+            print 'Exception: %s' % e.message
+            print_exc()
         finally:
             cursor.close()
             conn.close()
