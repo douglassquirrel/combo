@@ -5,6 +5,7 @@ from json import load, dump
 from pika import BlockingConnection, ConnectionParameters
 from psycopg2 import connect
 from sys import argv
+from time import time as now
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
 QUEUE_URL_TEMPLATE = 'http://combo.example.com/queues/%s'
@@ -12,10 +13,27 @@ QUEUE_URL_TEMPLATE = 'http://combo.example.com/queues/%s'
 with open(argv[1]) as config_file:
     config = load(config_file)
 
+class Alarm:
+    def __init__(self, duration):
+        if duration is not None:
+            self.alarm_time = now() + duration
+        else:
+            self.alarm_time = None
+
+    def is_ringing(self):
+        return self.alarm_time is not None and now() > self.alarm_time
+
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path_elements = self.path.split('/')
-        self.all_topics()
+        if len(path_elements) < 2:
+            self.bad_request()
+        elif path_elements[1] == 'queues' and len(path_elements) > 2:
+            self.get_from_queue(path_elements[2])
+        elif path_elements[1] == 'topics':
+            self.all_topics()
+        else:
+            self.bad_request()
     
     def do_POST(self):
         path_elements = self.path.split('/')
@@ -69,6 +87,34 @@ class MyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         dump(result, self.wfile)
+
+    def wait_on_queue(self, channel, queue):
+        alarm = Alarm(10)
+        while True:
+            fact = channel.basic_get(queue=queue, no_ack=True)[2]
+            if fact is not None:
+                return fact
+            if alarm.is_ringing():
+                return None
+
+    def get_from_queue(self, queue):
+        """Get fact from front of queue."""
+        connection = BlockingConnection(ConnectionParameters(host=config['rabbit_host'],
+                                                             port=config['rabbit_port']))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=config['exchange'], type='topic')
+        fact = self.wait_on_queue(channel, queue)
+        connection.close()
+
+        if fact is not None:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(fact)
+        else:
+            self.send_response(204)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
 
     def publish(self, topic):
         """Publish the given fact."""
