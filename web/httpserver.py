@@ -3,11 +3,18 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from json import load, dump
 from pika import BlockingConnection, ConnectionParameters
-from psycopg2 import connect
+#from psycopg2 import connect
 from sys import argv
 from time import time as now
+from urlparse import urlparse, parse_qs
 
-ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
+ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
+LAST_TEN_TOPICS_SQL = '''
+    SELECT id, topic, ts, content FROM
+        (SELECT id, topic, ts, content FROM facts ORDER BY id DESC LIMIT 10)
+    ORDER BY id ASC;
+'''
+SINCE_ID_SQL = 'SELECT id, topic, ts, content FROM facts WHERE id >= %s'
 QUEUE_URL_TEMPLATE = '%s/queues/%s'
 
 with open(argv[1]) as config_file:
@@ -25,13 +32,22 @@ class Alarm:
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        path_elements = self.path.split('/')
+        parsed_url = urlparse(self.path)
+        query_comp = parse_qs(parsed_url.query)
+        path_elements = parsed_url.path.split('/')
         if len(path_elements) < 2:
             self.bad_request()
         elif path_elements[1] == 'queues' and len(path_elements) > 2:
             self.get_from_queue(path_elements[2])
         elif path_elements[1] == 'topics':
-            self.all_topics()
+            if len(path_elements) == 2 or path_elements[2] == '':
+                self.all_topics()
+            elif 'from_id' in query_comp and query_comp[from_id].isdigit():
+                self.facts_since(path_elements[2], int(query_comp['from_id']))
+            elif len(query_comp) == 0:
+                self.last_ten_facts(path_elements[2])
+            else:
+                self.bad_request()
         else:
             self.bad_request()
     
@@ -68,6 +84,14 @@ class MyHandler(BaseHTTPRequestHandler):
         finally:
             cursor.close()
             conn.close()
+
+    def facts_since(self, topic, id):
+        """Get all facts for topic since the given id"""
+        print "facts for %s since %d" % (topic, id)
+    
+    def last_ten_facts(self, topic):
+        """Get last ten facts for topic"""
+        print "last 10 for %s" % (topic,)
 
     def make_queue(self, topic):
         """Create a queue for the given topic."""
