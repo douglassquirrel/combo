@@ -34,7 +34,7 @@ channel.exchange_declare(exchange=config['exchange'], type='topic')
 result = channel.queue_declare(exclusive=True)
 queue = result.method.queue
 
-channel.queue_bind(exchange=config['exchange'], queue=queue, routing_key='*')
+channel.queue_bind(exchange=config['exchange'], queue=queue, routing_key='#')
 
 channel.basic_consume(store, queue=queue, no_ack=True)
 channel.start_consuming()

@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from json import load
 from pika import BlockingConnection, ConnectionParameters
@@ -16,7 +18,9 @@ class MyHandler(BaseHTTPRequestHandler):
         connection = BlockingConnection(ConnectionParameters(host=config['rabbit_host'],
                                                              port=config['rabbit_port']))
         channel = connection.channel()
-        channel.basic_publish(exchange='',
+        channel.exchange_declare(exchange=config['exchange'], type='topic')
+
+        channel.basic_publish(exchange=config['exchange'],
                               routing_key=topic,
                               body=fact)
         connection.close()
