@@ -11,9 +11,9 @@ with open(argv[1]) as config_file:
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         path_elements = self.path.split('/')
-        if len(path_elements) < 2 or path_elements[1] != 'topics':
+        if len(path_elements) < 3 or path_elements[1] != 'topics':
             self.bad_request()
-        elif len(path_elements) < 3 and path_elements[3] == '':
+        elif len(path_elements) < 4 or path_elements[3] == '':
             self.publish(path_elements[2])
         else:
             self.make_queue(path_elements[2])
