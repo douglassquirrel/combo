@@ -1,4 +1,4 @@
-\#! /usr/bin/env python
+#! /usr/bin/env python
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from json import load, dump
@@ -12,6 +12,10 @@ with open(argv[1]) as config_file:
     config = load(config_file)
 
 class MyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path_elements = self.path.split('/')
+        all_topics(path_elements[2])
+    
     def do_POST(self):
         path_elements = self.path.split('/')
         if len(path_elements) < 3 or path_elements[1] != 'topics':
