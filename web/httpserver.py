@@ -10,10 +10,29 @@ with open(argv[1]) as config_file:
 
 class MyHandler(BaseHTTPRequestHandler):
     def do_POST(self):
+        path_elements = self.path.split('/')
+        if len(path_elements) < 2 or path_elements[1] != 'topics':
+            self.bad_request()
+        elif len(path_elements) < 3 and path_elements[3] == '':
+            self.publish(path_elements[2])
+        else:
+            self.make_queue(path_elements[2])
+
+    def bad_request(self):
+        self.send_response(400)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+
+    def all_topics(self):
+        """Return a list of all topics."""
+
+    def make_queue(self, topic):
+        """Create a queue for the given topic."""
+        
+    def publish(self, topic):
         """Publish the given fact."""
         content_len = int(self.headers.getheader('content-length', 0))
         fact = self.rfile.read(content_len)
-        topic = self.path.split('/')[2]
 
         connection = BlockingConnection(ConnectionParameters(host=config['rabbit_host'],
                                                              port=config['rabbit_port']))
