@@ -8,7 +8,7 @@ from sys import argv
 from time import time as now
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
-QUEUE_URL_TEMPLATE = 'http://combo.example.com/queues/%s'
+QUEUE_URL_TEMPLATE = '%s/queues/%s'
 
 with open(argv[1]) as config_file:
     config = load(config_file)
@@ -81,12 +81,12 @@ class MyHandler(BaseHTTPRequestHandler):
                            routing_key=topic)        
         connection.close()
 
-        result = {'queue_name': queue,
-                  'queue_url': QUEUE_URL_TEMPLATE % (queue,)}
+        out = {'queue_name': queue,
+               'queue_url': QUEUE_URL_TEMPLATE % (config['web_url'], queue,)}
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        dump(result, self.wfile)
+        dump(out, self.wfile)
 
     def wait_on_queue(self, channel, queue):
         alarm = Alarm(10)
@@ -135,8 +135,11 @@ class MyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/plain")
         self.end_headers()
 
+class ForkingServer(ForkingMixIn, HTTPServer):
+    pass
+
 if __name__ == '__main__':
-    httpd = HTTPServer((config['web_host'], config['web_port']), MyHandler)
+    httpd = ForkingServer((config['web_host'], config['web_port']), MyHandler)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
