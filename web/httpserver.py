@@ -12,11 +12,14 @@ from urlparse import urlparse, parse_qs
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
 LAST_TEN_SQL = '''
     SELECT id, topic, ts, content FROM
-        (SELECT id, topic, ts, content FROM facts ORDER BY id DESC LIMIT 10)
+        (SELECT id, topic, round(extract(epoch from ts)) AS ts, content
+             FROM facts ORDER BY id DESC LIMIT 10)
+        AS lastten
     ORDER BY id ASC;
 '''
 SINCE_ID_SQL = '''
-SELECT id, topic, ts, content FROM facts WHERE topic = %s and id >= %s;
+SELECT id, topic, round(extract(epoch from ts)), content
+    FROM facts WHERE topic = %s and id >= %s;
 '''
 QUEUE_URL_TEMPLATE = '%s/queues/%s'
 
@@ -98,7 +101,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 cursor.execute(LAST_TEN_SQL, topic)
             else:
                 cursor.execute(SINCE_ID_SQL, topic, id)
-            facts = [row[0] for row in cursor.fetchall()]
+            facts = cursor.fetchall()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
