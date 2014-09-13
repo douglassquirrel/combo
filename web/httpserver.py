@@ -1,9 +1,12 @@
-#! /usr/bin/env python
+\#! /usr/bin/env python
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from json import load
+from json import load, dump
 from pika import BlockingConnection, ConnectionParameters
+from psycopg2 import connect
 from sys import argv
+
+ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
 
 with open(argv[1]) as config_file:
     config = load(config_file)
@@ -15,8 +18,10 @@ class MyHandler(BaseHTTPRequestHandler):
             self.bad_request()
         elif len(path_elements) < 4 or path_elements[3] == '':
             self.publish(path_elements[2])
-        else:
+        elif path_elements[3] == 'queue':
             self.make_queue(path_elements[2])
+        else:
+            self.bad_request()
 
     def bad_request(self):
         self.send_response(400)
@@ -25,6 +30,22 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def all_topics(self):
         """Return a list of all topics."""
+        conn = connect(host=config['pg_host'], database=config['pg_database'],
+                       user=config['pg_user'], password=config['pg_password'])
+        cursor = conn.cursor()
+        try:
+            topic, content = method.routing_key, body
+            cursor.execute(ALL_TOPICS_SQL)
+            topics = [row[0] for row in cursor.fetchall()]
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            dump(topics, self.wfile)
+        except Exception as e:
+            print e.message
+        finally:
+            cursor.close()
+            conn.close()
 
     def make_queue(self, topic):
         """Create a queue for the given topic."""
