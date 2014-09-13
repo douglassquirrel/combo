@@ -7,6 +7,7 @@ from psycopg2 import connect
 from sys import argv
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
+QUEUE_URL_TEMPLATE = 'http://combo.example.com/queues/%s'
 
 with open(argv[1]) as config_file:
     config = load(config_file)
@@ -52,7 +53,23 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def make_queue(self, topic):
         """Create a queue for the given topic."""
-        
+        connection = BlockingConnection(ConnectionParameters(host=config['rabbit_host'],
+                                                             port=config['rabbit_port']))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=config['exchange'], type='topic')
+        queue = channel.queue_declare().method.queue
+        channel.queue_bind(exchange=config['exchange'],
+                           queue=queue,
+                           routing_key=topic)        
+        connection.close()
+
+        result = {'queue_name': queue,
+                  'queue_url': QUEUE_URL_TEMPLATE % (queue,)}
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        dump(result, self.wfile)
+
     def publish(self, topic):
         """Publish the given fact."""
         content_len = int(self.headers.getheader('content-length', 0))
