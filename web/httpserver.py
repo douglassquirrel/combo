@@ -4,7 +4,6 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from json import load, dump
 from pika import BlockingConnection, ConnectionParameters
 from psycopg2 import connect
-from psycopg2 import connect
 from SocketServer import ForkingMixIn
 from sys import argv
 from time import time as now
@@ -35,7 +34,7 @@ class Alarm:
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
-        query_comp = parse_qs(parsed_url.query)
+        q_comp = parse_qs(parsed_url.query)
         path_elements = parsed_url.path.split('/')
         if len(path_elements) < 2:
             self.bad_request()
@@ -44,9 +43,9 @@ class MyHandler(BaseHTTPRequestHandler):
         elif path_elements[1] == 'topics':
             if len(path_elements) == 2 or path_elements[2] == '':
                 self.all_topics()
-            elif 'from_id' in query_comp and query_comp[from_id].isdigit():
-                self.facts_since(path_elements[2], int(query_comp['from_id']))
-            elif len(query_comp) == 0:
+            elif 'from_id' in q_comp and q_comp['from_id'][0].isdigit():
+                self.facts_since(path_elements[2], int(q_comp['from_id'][0]))
+            elif len(q_comp) == 0:
                 self.last_ten_facts(path_elements[2])
             else:
                 self.bad_request()
