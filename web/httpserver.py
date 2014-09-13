@@ -3,7 +3,9 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from json import load, dump
 from pika import BlockingConnection, ConnectionParameters
-#from psycopg2 import connect
+from psycopg2 import connect
+from psycopg2 import connect
+from SocketServer import ForkingMixIn
 from sys import argv
 from time import time as now
 from urlparse import urlparse, parse_qs
