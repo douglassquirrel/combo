@@ -5,6 +5,8 @@ from pika import BlockingConnection, ConnectionParameters
 from psycopg2 import connect
 from sys import argv
 
+INSERT_SQL = 'INSERT INTO facts (topic, ts, content) VALUES (%s, now(), %s);'
+
 with open(argv[1]) as config_file:
     config = load(config_file)
 
@@ -15,8 +17,7 @@ def store(ch, method, properties, body):
 
     try:
         topic, content = method.routing_key, body
-        cursor.execute('INSERT INTO facts VALUES (%s, now(), %s);',
-                       (topic, content))
+        cursor.execute(INSERT_SQL, (topic, content))
         conn.commit()
         print 'Recorded topic %s, content %s' % (topic, content)
     except Exception as e:

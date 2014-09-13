@@ -5,6 +5,7 @@ AWS: set up RDS Postgres instance and EC2 Ubuntu instance
 Postgres:
 
     CREATE TABLE facts (
+        id serial primary key,
         topic character varying(255),
         ts timestamp without time zone,
         content json
