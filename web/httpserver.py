@@ -14,7 +14,7 @@ with open(argv[1]) as config_file:
 class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path_elements = self.path.split('/')
-        all_topics(path_elements[2])
+        self.all_topics()
     
     def do_POST(self):
         path_elements = self.path.split('/')
@@ -29,7 +29,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def bad_request(self):
         self.send_response(400)
-        self.send_header("Content-type", "text/plain")
+        self.send_header("Content-Type", "text/plain")
         self.end_headers()
 
     def all_topics(self):
@@ -38,11 +38,10 @@ class MyHandler(BaseHTTPRequestHandler):
                        user=config['pg_user'], password=config['pg_password'])
         cursor = conn.cursor()
         try:
-            topic, content = method.routing_key, body
             cursor.execute(ALL_TOPICS_SQL)
             topics = [row[0] for row in cursor.fetchall()]
             self.send_response(200)
-            self.send_header("Content-type", "application/json")
+            self.send_header("Content-Type", "application/json")
             self.end_headers()
             dump(topics, self.wfile)
         except Exception as e:
@@ -70,7 +69,7 @@ class MyHandler(BaseHTTPRequestHandler):
         connection.close()
 
         self.send_response(202)
-        self.send_header("Content-type", "text/plain")
+        self.send_header("Content-Type", "text/plain")
         self.end_headers()
 
 if __name__ == '__main__':
