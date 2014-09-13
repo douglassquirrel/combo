@@ -10,12 +10,14 @@ from time import time as now
 from urlparse import urlparse, parse_qs
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
-LAST_TEN_TOPICS_SQL = '''
+LAST_TEN_SQL = '''
     SELECT id, topic, ts, content FROM
         (SELECT id, topic, ts, content FROM facts ORDER BY id DESC LIMIT 10)
     ORDER BY id ASC;
 '''
-SINCE_ID_SQL = 'SELECT id, topic, ts, content FROM facts WHERE id >= %s'
+SINCE_ID_SQL = '''
+SELECT id, topic, ts, content FROM facts WHERE topic = %s and id >= %s;
+'''
 QUEUE_URL_TEMPLATE = '%s/queues/%s'
 
 with open(argv[1]) as config_file:
@@ -46,7 +48,7 @@ class MyHandler(BaseHTTPRequestHandler):
             elif 'from_id' in q_comp and q_comp['from_id'][0].isdigit():
                 self.facts_since(path_elements[2], int(q_comp['from_id'][0]))
             elif len(q_comp) == 0:
-                self.last_ten_facts(path_elements[2])
+                self.facts_since(path_elements[2])
             else:
                 self.bad_request()
         else:
@@ -86,13 +88,26 @@ class MyHandler(BaseHTTPRequestHandler):
             cursor.close()
             conn.close()
 
-    def facts_since(self, topic, id):
-        """Get all facts for topic since the given id"""
-        print "facts for %s since %d" % (topic, id)
-    
-    def last_ten_facts(self, topic):
-        """Get last ten facts for topic"""
-        print "last 10 for %s" % (topic,)
+    def facts_since(self, topic, id=None):
+        """Get all facts for topic since the given id, or last 10 if None"""
+        conn = connect(host=config['pg_host'], database=config['pg_database'],
+                       user=config['pg_user'], password=config['pg_password'])
+        cursor = conn.cursor()
+        try:
+            if id is None:
+                cursor.execute(LAST_TEN_SQL, topic)
+            else:
+                cursor.execute(SINCE_ID_SQL, topic, id)
+            facts = [row[0] for row in cursor.fetchall()]
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            dump(facts, self.wfile)
+        except Exception as e:
+            print e.message
+        finally:
+            cursor.close()
+            conn.close()
 
     def make_queue(self, topic):
         """Create a queue for the given topic."""
