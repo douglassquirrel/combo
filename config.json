@@ -1,11 +1,11 @@
 {"exchange": "combo",
- "rabbit_host": "54.76.117.95",
+ "rabbit_host": "54.72.206.153",
  "rabbit_port": 5672,
- "pg_host": "microservices-chris-10sep2014.cc9uedlzx2lk.eu-west-1.rds.amazonaws.com",
+ "pg_host": "citcon19sep2014.cc9uedlzx2lk.eu-west-1.rds.amazonaws.com",
  "pg_database": "micro",
  "pg_user": "microservices",
  "pg_password": "microservices",
  "web_host": "0.0.0.0", 
  "web_port": 8080,
- "web_url": "http://54.76.117.95:8080" 
+ "web_url": "http://54.72.206.153:8080" 
 }

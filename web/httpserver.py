@@ -22,7 +22,7 @@ AFTER_ID_SQL = '''
 SELECT id, topic, round(extract(epoch from ts)), content
     FROM facts WHERE topic = %s and id > %s;
 '''
-RETRIEVAL_URL_TEMPLATE = '%s/topics/%s/facts?subscription_id=/%s'
+RETRIEVAL_URL_TEMPLATE = '%s/topics/%s/facts?subscription_id=%s'
 
 with open(argv[1]) as config_file:
     config = load(config_file)
@@ -37,13 +37,16 @@ class Alarm:
     def is_ringing(self):
         return self.alarm_time is not None and now() > self.alarm_time
 
-def run_sql(sql, parameters):
+def run_sql(sql, parameters=None):
     """Run SQL and return result"""
     conn = connect(host=config['pg_host'], database=config['pg_database'],
                    user=config['pg_user'], password=config['pg_password'])
     cursor = conn.cursor()
     try:
-        cursor.execute(sql, parameters)
+        if parameters is None:
+            cursor.execute(sql)
+        else:
+            cursor.execute(sql, parameters)
         return cursor.fetchall()
     except Exception as e:
         print 'Exception: %s' % e.message
@@ -91,16 +94,14 @@ def subscribe(respond, topic):
                        routing_key=topic)        
     close_rabbit(channel)
     
-    retrieval_url = RETRIEVAL_URL_TEMPLATE % (config['web_url'], topic, queue)}
+    retrieval_url = RETRIEVAL_URL_TEMPLATE % (config['web_url'], topic, queue)
     content = {'subscription_name': queue, 'retrieval_url': retrieval_url}
     respond(code=200, content_type='application/json', content=content)
     
-def wait_on_queue(queue):
-    channel = rabbit_channel()
+def wait_on_queue(queue, channel):
     alarm = Alarm(10)
     while True:
         fact = channel.basic_get(queue=queue, no_ack=True)[2]
-        close_rabbit(channel)
         if fact is not None:
             return fact
         if alarm.is_ringing():
@@ -108,7 +109,9 @@ def wait_on_queue(queue):
 
 def get_from_queue(respond, queue):
     """Get fact from front of queue."""
-    fact = self.wait_on_queue(queue)
+    channel = rabbit_channel()
+    fact = wait_on_queue(queue, channel)
+    close_rabbit(channel)
     if fact is not None:
         respond(code=200, content_type='application/json', content=fact)
     else:
@@ -122,9 +125,9 @@ def publish(respond, topic, fact):
                           body=fact)
     close_rabbit(channel)
 
-    respond(code=202, content_type='text/plain', content=''))
+    respond(code=202, content_type='text/plain', content='')
 
-def respond(handler, code, content_type, content):
+def _respond(handler, code, content_type, content):
     handler.send_response(code)
     handler.send_header("Content-Type", content_type)
     handler.end_headers()
@@ -145,11 +148,12 @@ class MyHandler(BaseHTTPRequestHandler):
         parsed_url = urlparse(self.path)
         query_components = parse_qs(parsed_url.query)
 
-        after_id = extract_query_component('after_id')
-        sub_id = extract_query_component('subscription_id')
+        after_id = extract_query_component('after_id', query_components)
+        sub_id = extract_query_component('subscription_id', query_components)
         topic, res = extract_from_path(parsed_url.path.split('/'))
 
-        respond = lambda c, ct, con: respond(self, c, ct, con)
+        respond = lambda code, content_type, content: \
+                  _respond(self, code, content_type, content)
 
         if topic is None:
             all_topics(respond)
@@ -170,7 +174,8 @@ class MyHandler(BaseHTTPRequestHandler):
         query_components = parse_qs(parsed_url.query)
         topic, res = extract_from_path(parsed_url.path.split('/'))
 
-        respond = lambda c, ct, con: respond(self, c, ct, con)
+        respond = lambda code, content_type, content: \
+                  _respond(self, code, content_type, content)
 
         if res == 'subscription':
             subscribe(respond, topic)
