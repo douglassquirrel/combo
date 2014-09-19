@@ -8,7 +8,7 @@ from sys import argv
 from time import time as now
 from traceback import print_exc
 from urlparse import urlparse, parse_qs
-from wsgiref.simple_server import WSGIServer
+from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
 LAST_TEN_SQL = '''
@@ -73,19 +73,19 @@ def close_rabbit(channel):
 def all_topics(start_response):
     """Return a list of all topics."""
     topics = [row[0] for row in run_sql(ALL_TOPICS_SQL)]
-    start_response('200', [('Content-Type', 'application/json')])
+    start_response('200 OK', [('Content-Type', 'application/json')])
     return dumps(topics)
 
 def last_ten(start_response, topic):
     """Get last ten facts on topic"""
     facts = run_sql(LAST_TEN_SQL, (topic,))
-    start_response('200', [('Content-Type', 'application/json')])
+    start_response('200 OK', [('Content-Type', 'application/json')])
     return dumps(facts)
 
 def facts_after(start_response, topic, id):
     """Get all facts for topic after the given id"""
     facts = run_sql(AFTER_ID_SQL, (topic, id))
-    start_response('200', [('Content-Type', 'application/json')])
+    start_response('200 OK', [('Content-Type', 'application/json')])
     return dumps(facts)
 
 def subscribe(start_response, topic):
@@ -98,7 +98,7 @@ def subscribe(start_response, topic):
     close_rabbit(channel)
     
     retrieval_url = RETRIEVAL_URL_TEMPLATE % (config['web_url'], topic, queue)
-    start_response('200', [('Content-Type', 'application/json')])
+    start_response('200 OK', [('Content-Type', 'application/json')])
     return dumps({'subscription_name': queue, 'retrieval_url': retrieval_url})
     
 def wait_on_queue(queue, channel):
@@ -116,10 +116,11 @@ def get_from_queue(start_response, queue):
     fact = wait_on_queue(queue, channel)
     close_rabbit(channel)
     if fact is not None:
-        start_response('200', [('Content-Type', 'application/json')])
+        start_response('200 OK', [('Content-Type', 'application/json')])
         return fact
     else:
-        start_response('204', [('Content-Type', 'application/json')])
+        start_response('204 No Content',
+                       [('Content-Type', 'application/json')])
         return ''
         
 def publish(start_response, topic, fact):
@@ -130,7 +131,7 @@ def publish(start_response, topic, fact):
                           body=fact)
     close_rabbit(channel)
 
-    start_response('202', [('Content-Type', 'application/json')])
+    start_response('202 Accepted', [('Content-Type', 'application/json')])
     return ''
 
 def extract_from_path(path_elements):
@@ -146,11 +147,12 @@ def extract_query_component(name, query_components):
 def handler(environ, start_response):
     method = environ.get('REQUEST_METHOD')
     if method == 'GET':
-        do_GET(environ, start_response)
+        return do_GET(environ, start_response)
     elif method == 'POST':
-        do_POST(environ, start_response)
+        return do_POST(environ, start_response)
     else:
-        start_response('405', [('Content-Type', 'application/json')])
+        start_response('405 Method Not Allowed',
+                       [('Content-Type', 'application/json')])
         return ''
 
 def do_GET(environ, start_response):
@@ -169,21 +171,23 @@ def do_GET(environ, start_response):
     elif res == 'facts':
         return [last_ten(start_response, topic)]
     else:
-        start_response('400', [('Content-Type', 'text/plain')])
+        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
         return ['']
 
 def do_POST(environ, start_response):
-    content_len = int(environ.get('CONTENT_LENGTH', 0))
-    data = environ['wsgi.input'].read(content_len)
+    content_len_string = environ.get('CONTENT_LENGTH', '0')
+    if content_len_string.isdigit():
+        content_len = int(content_len_string)
+        data = environ['wsgi.input'].read(content_len)
     
     topic, res = extract_from_path(environ['PATH_INFO'].split('/'))
     
     if res == 'subscription':
-        subscribe(start_response, topic)
+        return subscribe(start_response, topic)
     elif res == 'facts':
-        publish(start_response, topic, data)
+        return publish(start_response, topic, data)
     else:
-        start_response('400', [('Content-Type', 'text/plain')])
+        start_response('400 Bad Request', [('Content-Type', 'text/plain')])
         return ['']
 
 class ForkingServer(ForkingMixIn, WSGIServer):
@@ -192,8 +196,8 @@ class ForkingServer(ForkingMixIn, WSGIServer):
 if __name__ == '__main__':
     host = config['web_host']
     port = config['web_port']
-    server = ForkingWSGIServer((host, port), WSGIRequestHandler))
-    server.set_app(app)
+    server = ForkingServer((host, port), WSGIRequestHandler)
+    server.set_app(handler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
