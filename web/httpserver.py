@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from json import load, dumps
 from pika import BlockingConnection, ConnectionParameters
 from psycopg2 import connect
@@ -9,6 +8,7 @@ from sys import argv
 from time import time as now
 from traceback import print_exc
 from urlparse import urlparse, parse_qs
+from wsgiref.simple_server import WSGIServer
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
 LAST_TEN_SQL = '''
@@ -70,22 +70,25 @@ def rabbit_channel():
 def close_rabbit(channel):
     channel.connection.close()
 
-def all_topics(respond):
+def all_topics(start_response):
     """Return a list of all topics."""
     topics = [row[0] for row in run_sql(ALL_TOPICS_SQL)]
-    respond(code=200, content_type='application/json', content=dumps(topics))
+    start_response('200', [('Content-Type', 'application/json')])
+    return dumps(topics)
 
-def last_ten(respond, topic):
+def last_ten(start_response, topic):
     """Get last ten facts on topic"""
     facts = run_sql(LAST_TEN_SQL, (topic,))
-    respond(code=200, content_type='application/json', content=dumps(facts))
+    start_response('200', [('Content-Type', 'application/json')])
+    return dumps(facts)
 
-def facts_after(respond, topic, id):
+def facts_after(start_response, topic, id):
     """Get all facts for topic after the given id"""
     facts = run_sql(AFTER_ID_SQL, (topic, id))
-    respond(code=200, content_type='application/json', content=dumps(facts))
+    start_response('200', [('Content-Type', 'application/json')])
+    return dumps(facts)
 
-def subscribe(respond, topic):
+def subscribe(start_response, topic):
     """Create a subscription for the given topic."""
     channel = rabbit_channel()
     queue = channel.queue_declare().method.queue
@@ -95,8 +98,8 @@ def subscribe(respond, topic):
     close_rabbit(channel)
     
     retrieval_url = RETRIEVAL_URL_TEMPLATE % (config['web_url'], topic, queue)
-    content = {'subscription_name': queue, 'retrieval_url': retrieval_url}
-    respond(code=200, content_type='application/json', content=content)
+    start_response('200', [('Content-Type', 'application/json')])
+    return dumps({'subscription_name': queue, 'retrieval_url': retrieval_url})
     
 def wait_on_queue(queue, channel):
     alarm = Alarm(10)
@@ -107,17 +110,19 @@ def wait_on_queue(queue, channel):
         if alarm.is_ringing():
             return None
 
-def get_from_queue(respond, queue):
+def get_from_queue(start_response, queue):
     """Get fact from front of queue."""
     channel = rabbit_channel()
     fact = wait_on_queue(queue, channel)
     close_rabbit(channel)
     if fact is not None:
-        respond(code=200, content_type='application/json', content=fact)
+        start_response('200', [('Content-Type', 'application/json')])
+        return fact
     else:
-        respond(code=204, content_type='text/plain', content='')
+        start_response('204', [('Content-Type', 'application/json')])
+        return ''
         
-def publish(respond, topic, fact):
+def publish(start_response, topic, fact):
     """Publish the given fact."""
     channel = rabbit_channel()    
     channel.basic_publish(exchange=config['exchange'],
@@ -125,13 +130,8 @@ def publish(respond, topic, fact):
                           body=fact)
     close_rabbit(channel)
 
-    respond(code=202, content_type='text/plain', content='')
-
-def _respond(handler, code, content_type, content):
-    handler.send_response(code)
-    handler.send_header("Content-Type", content_type)
-    handler.end_headers()
-    handler.wfile.write(content)
+    start_response('202', [('Content-Type', 'application/json')])
+    return ''
 
 def extract_from_path(path_elements):
     if len(path_elements) < 4 or path_elements[1] != 'topics' \
@@ -143,54 +143,59 @@ def extract_from_path(path_elements):
 def extract_query_component(name, query_components):
     return query_components.get(name, [None])[0]
 
-class MyHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        parsed_url = urlparse(self.path)
-        query_components = parse_qs(parsed_url.query)
+def handler(environ, start_response):
+    method = environ.get('REQUEST_METHOD')
+    if method == 'GET':
+        do_GET(environ, start_response)
+    elif method == 'POST':
+        do_POST(environ, start_response)
+    else:
+        start_response('405', [('Content-Type', 'application/json')])
+        return ''
 
-        after_id = extract_query_component('after_id', query_components)
-        sub_id = extract_query_component('subscription_id', query_components)
-        topic, res = extract_from_path(parsed_url.path.split('/'))
+def do_GET(environ, start_response):
+    query_components = parse_qs(environ.get('QUERY_STRING', ''))    
+    after_id = extract_query_component('after_id', query_components)
+    sub_id = extract_query_component('subscription_id', query_components)
 
-        respond = lambda code, content_type, content: \
-                  _respond(self, code, content_type, content)
+    topic, res = extract_from_path(environ['PATH_INFO'].split('/'))
+    
+    if topic is None:
+        return [all_topics(start_response)]
+    elif res == 'facts' and after_id is not None and after_id.isdigit():
+        return [facts_after(start_response, topic, int(after_id))]
+    elif res == 'facts' and sub_id is not None:
+        return [get_from_queue(start_response, sub_id)]
+    elif res == 'facts':
+        return [last_ten(start_response, topic)]
+    else:
+        start_response('400', [('Content-Type', 'text/plain')])
+        return ['']
 
-        if topic is None:
-            all_topics(respond)
-        elif res == 'facts' and after_id is not None and after_id.isdigit():
-            facts_after(respond, topic, int(after_id))
-        elif res == 'facts' and sub_id is not None:
-            get_from_queue(respond, sub_id)
-        elif res == 'facts':
-            last_ten(respond, topic)
-        else:
-            respond(400, 'text/plain', '')
+def do_POST(environ, start_response):
+    content_len = int(environ.get('CONTENT_LENGTH', 0))
+    data = environ['wsgi.input'].read(content_len)
+    
+    topic, res = extract_from_path(environ['PATH_INFO'].split('/'))
+    
+    if res == 'subscription':
+        subscribe(start_response, topic)
+    elif res == 'facts':
+        publish(start_response, topic, data)
+    else:
+        start_response('400', [('Content-Type', 'text/plain')])
+        return ['']
 
-    def do_POST(self):
-        content_len = int(self.headers.getheader('content-length', 0))
-        data = self.rfile.read(content_len)
-
-        parsed_url = urlparse(self.path)
-        query_components = parse_qs(parsed_url.query)
-        topic, res = extract_from_path(parsed_url.path.split('/'))
-
-        respond = lambda code, content_type, content: \
-                  _respond(self, code, content_type, content)
-
-        if res == 'subscription':
-            subscribe(respond, topic)
-        elif res == 'facts':
-            publish(respond, topic, data)
-        else:
-            respond(400, 'text/plain', '')
-
-class ForkingServer(ForkingMixIn, HTTPServer):
+class ForkingServer(ForkingMixIn, WSGIServer):
     pass
 
 if __name__ == '__main__':
-    httpd = ForkingServer((config['web_host'], config['web_port']), MyHandler)
+    host = config['web_host']
+    port = config['web_port']
+    server = ForkingWSGIServer((host, port), WSGIRequestHandler))
+    server.set_app(app)
     try:
-        httpd.serve_forever()
+        server.serve_forever()
     except KeyboardInterrupt:
         pass
-    httpd.server_close()
+    server.server_close()
