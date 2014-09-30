@@ -1,1 +1,1 @@
-web: gunicorn web/httpserver.py -log-file - 
+web: gunicorn web/httpserver.py --log-file - 
