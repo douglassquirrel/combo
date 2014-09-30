@@ -3,12 +3,10 @@
 from json import load, dumps
 from pika import BlockingConnection, ConnectionParameters
 from psycopg2 import connect
-from SocketServer import ForkingMixIn
 from sys import argv
 from time import time as now
 from traceback import print_exc
 from urlparse import urlparse, parse_qs
-from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 
 ALL_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts;'
 LAST_TEN_SQL = '''
@@ -24,8 +22,8 @@ SELECT id, topic, round(extract(epoch from ts)), content
 '''
 RETRIEVAL_URL_TEMPLATE = '%s/topics/%s/facts?subscription_id=%s'
 
-with open(argv[1]) as config_file:
-    config = load(config_file)
+#with open(argv[1]) as config_file:
+#    config = load(config_file)
 
 class Alarm:
     def __init__(self, duration):
@@ -190,16 +188,6 @@ def do_POST(environ, start_response):
         start_response('400 Bad Request', [('Content-Type', 'text/plain')])
         return ['']
 
-class ForkingServer(ForkingMixIn, WSGIServer):
-    pass
-
-if __name__ == '__main__':
-    host = config['web_host']
-    port = config['web_port']
-    server = ForkingServer((host, port), WSGIRequestHandler)
-    server.set_app(handler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    server.server_close()
+def application(environ, start_response):
+    start_response('200 OK', [('Content-Type','text/html')])
+    return ["Hello World"]
