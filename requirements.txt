@@ -1,4 +1,5 @@
 flask
 gunicorn
+nose
 pika
 psycopg2
