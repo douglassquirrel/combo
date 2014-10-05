@@ -6,6 +6,7 @@ from web import combo_server
 
 TEST_HOME_PAGE = 'test home page'
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
+#Use template, map here
 TEST_TOPICS_RESPONSE = \
     [{'topic_name': 'headlines',
       'facts_url': 'http://foo.com/topics/headlines/facts',
