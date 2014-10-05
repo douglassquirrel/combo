@@ -63,10 +63,19 @@ class ComboServerTest(TestCase):
         self.assertEqual('text/plain; charset=utf-8', response.content_type)
         self.assertEqual({'topic': TEST_TOPIC, 'fact': TEST_FACT},
                          self.app.config['PUBSUB'].last_fact)
-                         
+
+    def test_get_last_10_facts(self):
+        pass
+    def test_get_facts_after_id(self):
+        pass
+    def test_get_fact_from_subscription(self):
+        pass
+    def test_get_fact_from_subscription_and_timeout(self):
+        pass
 
     def test_subscription(self):
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
         self.assertEqual(200, response.status_code)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(TEST_SUB_ID, loads(response.data))
+        #assert correct format
