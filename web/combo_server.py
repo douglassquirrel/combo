@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from flask import Flask, url_for, Response
+from flask import Flask, Response, request, url_for
 from json import dumps
 from os import environ
 from os.path import dirname, join as pathjoin
@@ -27,6 +27,7 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
+    app.config['PUBSUB'].publish(topic, request.data)
     return respond('', 'text/plain', status=202)
 
 def format_topic(topic):

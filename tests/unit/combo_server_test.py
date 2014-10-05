@@ -28,6 +28,9 @@ class MockPubSub:
     def subscribe(self, topic):
         return '%s.subscription' % (topic,)
 
+    def publish(self, topic, fact):
+        self.last_fact = {'topic': topic, 'fact': fact}
+
 class ComboServerTest(TestCase):
     def setUp(self):
         self.app = combo_server.app
@@ -58,6 +61,9 @@ class ComboServerTest(TestCase):
                                     data=TEST_FACT)
         self.assertEqual(202, response.status_code)
         self.assertEqual('text/plain; charset=utf-8', response.content_type)
+        self.assertEqual({'topic': TEST_TOPIC, 'fact': TEST_FACT},
+                         self.app.config['PUBSUB'].last_fact)
+                         
 
     def test_subscription(self):
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
