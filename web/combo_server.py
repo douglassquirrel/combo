@@ -1,14 +1,23 @@
 #! /usr/bin/env python
 
 from flask import Flask, Response
+from os import environ
 from os.path import dirname, join as pathjoin
+
+default_config_file = pathjoin(dirname(__file__), 'settings.cfg')
+config_file = environ.get('COMBO_SETTINGS_FILE', default_config_file)
+
 app = Flask('combo')
+app.config.from_pyfile(config_file)
 
 @app.route('/')
 def home():
-    with open(pathjoin(dirname(__file__), 'home.html')) as f:
-        home = f.read()
-    return Response(home, content_type='text/html; charset=utf-8')
+    return respond(app.config['HOME_HTML'], mimetype='text/html')
+
+def respond(data, mimetype):
+    response = Response(data, mimetype=mimetype)
+    response.charset = app.config['CHARSET']
+    return response
 
 if __name__ == '__main__':
     app.run()

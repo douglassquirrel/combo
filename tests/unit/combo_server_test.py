@@ -3,17 +3,20 @@
 from web import combo_server
 from unittest import TestCase
 
-class ComboServerTest(TestCase):
+TEST_HOME_PAGE = 'test home page'
 
+class ComboServerTest(TestCase):
     def setUp(self):
-        combo_server.app.testing = True
-        self.client = combo_server.app.test_client()
+        self.app = combo_server.app
+        self.app.testing = True
+        self.client = self.app.test_client()
 
     def tearDown(self):
         pass
 
-    def test_root(self):
+    def test_home(self):
+        self.app.config['HOME_HTML'] = TEST_HOME_PAGE
         response = self.client.get('/')
-        self.assertEqual(200, response.status_code, 200)
+        self.assertEqual(200, response.status_code)
         self.assertEqual('text/html; charset=utf-8', response.content_type)
-        self.assertIn('Welcome', response.data)
+        self.assertEqual(TEST_HOME_PAGE, response.data)
