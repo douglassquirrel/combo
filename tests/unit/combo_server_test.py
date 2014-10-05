@@ -18,6 +18,7 @@ TEST_TOPICS_RESPONSE = \
       'subscription_url': 'http://foo.com/topics/story.update/subscription'}]
 TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
+TEST_FACT = '{"headline": "Aliens Land", "body": "They just arriv--AAGH!"}'
 
 class MockFactspace:
     def list_topics(self):
@@ -51,6 +52,12 @@ class ComboServerTest(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(TEST_TOPICS_RESPONSE, loads(response.data))
+
+    def test_publish(self):
+        response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
+                                    data=TEST_FACT)
+        self.assertEqual(202, response.status_code)
+        self.assertEqual('text/plain; charset=utf-8', response.content_type)
 
     def test_subscription(self):
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))

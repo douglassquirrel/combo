@@ -27,16 +27,17 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
-    return ''
+    return respond('', 'text/plain', status=202)
 
 def format_topic(topic):
     return {'topic_name': topic,
             'subscription_url': ext_url_for('subscription', topic),
             'facts_url': ext_url_for('get_facts', topic)}
 
-def respond(data, mimetype):
+def respond(data, mimetype, status=200):
     response = Response(data, mimetype=mimetype)
     response.charset = app.config['CHARSET']
+    response.status_code = status
     return response
 
 def respond_json(data):
