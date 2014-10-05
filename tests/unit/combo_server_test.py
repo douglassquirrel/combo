@@ -14,6 +14,6 @@ class ComboServerTest(TestCase):
 
     def test_root(self):
         response = self.client.get('/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content_type, 'text/plain; charset=utf-8')
-        self.assertEqual(response.data, 'Hello Flask World!')
+        self.assertEqual(200, response.status_code, 200)
+        self.assertEqual('text/html; charset=utf-8', response.content_type)
+        self.assertIn('Welcome', response.data)
