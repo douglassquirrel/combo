@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from flask import Flask, Response
+from flask import Flask, url_for, Response
 from json import dumps
 from os import environ
 from os.path import dirname, join as pathjoin
@@ -14,7 +14,7 @@ def home():
 @app.route('/topics', methods=['GET'])
 def topics():
     topics = app.config['FACTSPACE'].list_topics()
-    return respond_json(topics)
+    return respond_json(map(format_topic, topics))
 
 @app.route('/topics/<topic>/subscription', methods=['POST'])
 def subscription(topic):
@@ -29,6 +29,11 @@ def get_facts(topic):
 def publish_fact(topic):
     return ''
 
+def format_topic(topic):
+    return {'topic_name': topic,
+            'subscription_url': ext_url_for('subscription', topic),
+            'facts_url': ext_url_for('get_facts', topic)}
+
 def respond(data, mimetype):
     response = Response(data, mimetype=mimetype)
     response.charset = app.config['CHARSET']
@@ -36,6 +41,9 @@ def respond(data, mimetype):
 
 def respond_json(data):
     return respond(dumps(data), mimetype='application/json')
+
+def ext_url_for(function, topic):
+    return url_for(function, topic=topic, _external=True)
 
 default_config_file = pathjoin(dirname(__file__), 'settings.cfg')
 config_file = environ.get('COMBO_SETTINGS_FILE', default_config_file)

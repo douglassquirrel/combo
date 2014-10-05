@@ -6,6 +6,16 @@ from web import combo_server
 
 TEST_HOME_PAGE = 'test home page'
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
+TEST_TOPICS_RESPONSE = \
+    [{'topic_name': 'headlines',
+      'facts_url': 'http://foo.com/topics/headlines/facts', 
+      'subscription_url': 'http://foo.com/topics/headlines/subscription'},
+     {'topic_name': 'story.creation',
+      'facts_url': 'http://foo.com/topics/story.creation/facts', 
+      'subscription_url': 'http://foo.com/topics/story.creation/subscription'},
+     {'topic_name': 'story.update',
+      'facts_url': 'http://foo.com/topics/story.update/facts', 
+      'subscription_url': 'http://foo.com/topics/story.update/subscription'}]
 TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
 
@@ -21,6 +31,7 @@ class ComboServerTest(TestCase):
     def setUp(self):
         self.app = combo_server.app
         self.app.testing = True
+        self.app.config['SERVER_NAME'] = 'foo.com'
         self.app.config['FACTSPACE'] = MockFactspace()
         self.app.config['PUBSUB'] = MockPubSub()
         self.client = self.app.test_client()
@@ -39,7 +50,7 @@ class ComboServerTest(TestCase):
         response = self.client.get('/topics')
         self.assertEqual(200, response.status_code)
         self.assertEqual('application/json', response.content_type)
-        self.assertEqual(TEST_TOPICS, loads(response.data))
+        self.assertEqual(TEST_TOPICS_RESPONSE, loads(response.data))
 
     def test_subscription(self):
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
