@@ -1,1 +1,1 @@
-web: gunicorn web.httpserver:app --log-file - 
+web: gunicorn web.combo_server:app --log-file - 
