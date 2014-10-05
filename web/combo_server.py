@@ -11,10 +11,23 @@ app = Flask('combo')
 def home():
     return respond(app.config['HOME_HTML'], mimetype='text/html')
 
-@app.route('/topics')
+@app.route('/topics', methods=['GET'])
 def topics():
     topics = app.config['FACTSPACE'].list_topics()
     return respond_json(topics)
+
+@app.route('/topics/<topic>/subscription', methods=['POST'])
+def subscription(topic):
+    subscription_id = app.config['PUBSUB'].subscribe(topic)
+    return respond_json(subscription_id)
+
+@app.route('/topics/<topic>/facts', methods=['GET'])
+def get_facts(topic):
+    return '[]'
+
+@app.route('/topics/<topic>/facts', methods=['POST'])
+def publish_fact(topic):
+    return ''
 
 def respond(data, mimetype):
     response = Response(data, mimetype=mimetype)
