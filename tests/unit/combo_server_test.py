@@ -1,4 +1,4 @@
-#! /usr/bin/env python  
+#! /usr/bin/env python
 
 from json import loads
 from unittest import TestCase
@@ -8,13 +8,13 @@ TEST_HOME_PAGE = 'test home page'
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
 TEST_TOPICS_RESPONSE = \
     [{'topic_name': 'headlines',
-      'facts_url': 'http://foo.com/topics/headlines/facts', 
+      'facts_url': 'http://foo.com/topics/headlines/facts',
       'subscription_url': 'http://foo.com/topics/headlines/subscription'},
      {'topic_name': 'story.creation',
-      'facts_url': 'http://foo.com/topics/story.creation/facts', 
+      'facts_url': 'http://foo.com/topics/story.creation/facts',
       'subscription_url': 'http://foo.com/topics/story.creation/subscription'},
      {'topic_name': 'story.update',
-      'facts_url': 'http://foo.com/topics/story.update/facts', 
+      'facts_url': 'http://foo.com/topics/story.update/facts',
       'subscription_url': 'http://foo.com/topics/story.update/subscription'}]
 TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
@@ -26,6 +26,7 @@ class MockFactspace:
 
 class MockPubSub:
     def subscribe(self, topic):
+        self.last_subscription = {'topic': topic}
         return '%s.subscription' % (topic,)
 
     def publish(self, topic, fact):
@@ -79,3 +80,5 @@ class ComboServerTest(TestCase):
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(TEST_SUB_ID, loads(response.data))
         #assert correct format
+        self.assertEqual({'topic': TEST_TOPIC},
+                         self.app.config['PUBSUB'].last_subscription)
