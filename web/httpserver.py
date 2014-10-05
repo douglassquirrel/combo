@@ -1,5 +1,13 @@
 #! /usr/bin/env python
 
-def application(environ, start_response):
-    start_response('200 OK', [('Content-Type','text/html')])
-    return ["Hello World"]
+from flask import Flask
+app = Flask(__name__)
+
+
+@app.route('/')
+def hello():
+    return "Hello Flask World!"
+
+if __name__ == '__main__':
+    app.run()
+

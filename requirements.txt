@@ -1,3 +1,4 @@
+flask
+gunicorn
 pika
 psycopg2
-gunicorn
