@@ -16,6 +16,10 @@ def make_topic_response_element(topic):
 TEST_TOPICS_RESPONSE = map(make_topic_response_element, TEST_TOPICS)
 TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
+RETR_URL_PATTERN = 'http://foo.com/topics/%s/facts?subscription_id=%s'
+TEST_SUB_RESPONSE = {'retrieval_url': RETR_URL_PATTERN % (TEST_TOPIC,
+                                                          TEST_SUB_ID),
+                     'subscription_id': TEST_SUB_ID}
 TEST_FACT = '{"headline": "Aliens Land", "body": "They just arriv--AAGH!"}'
 
 class ComboServerTest(TestCase):
@@ -46,7 +50,7 @@ class ComboServerTest(TestCase):
                                     data=TEST_FACT)
         self.assertEqual(202, response.status_code)
         self.assertEqual('text/plain; charset=utf-8', response.content_type)
-        pubsub.publish.assert_called_once_with(topic=TEST_TOPIC, 
+        pubsub.publish.assert_called_once_with(topic=TEST_TOPIC,
                                                fact=TEST_FACT)
 
     def test_get_last_10_facts(self):
@@ -63,7 +67,7 @@ class ComboServerTest(TestCase):
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
         self.assertEqual(200, response.status_code)
         self.assertEqual('application/json', response.content_type)
-        self.assertEqual(TEST_SUB_ID, loads(response.data))
+        self.assertEqual(TEST_SUB_RESPONSE, loads(response.data))
         #assert correct format
         pubsub.subscribe.assert_called_once_with(topic=TEST_TOPIC)
 

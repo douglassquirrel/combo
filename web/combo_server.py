@@ -19,7 +19,7 @@ def topics():
 @app.route('/topics/<topic>/subscription', methods=['POST'])
 def subscription(topic):
     subscription_id = app.config['PUBSUB'].subscribe(topic=topic)
-    return respond_json(subscription_id)
+    return respond_json(format_subscription(topic, subscription_id))
 
 @app.route('/topics/<topic>/facts', methods=['GET'])
 def get_facts(topic):
@@ -34,6 +34,11 @@ def format_topic(topic):
     return {'topic_name': topic,
             'subscription_url': ext_url_for('subscription', topic),
             'facts_url': ext_url_for('get_facts', topic)}
+
+def format_subscription(topic, sub_id):
+    RETRIEVAL_URL = ext_url_for('get_facts', topic) \
+                      + '?subscription_id=%s' % (sub_id,)
+    return {'retrieval_url': RETRIEVAL_URL, 'subscription_id': sub_id}
 
 def respond(data, mimetype, status=200):
     response = Response(data, mimetype=mimetype)
@@ -53,4 +58,3 @@ app.config.from_pyfile(config_file)
 
 if __name__ == '__main__':
     app.run()
-
