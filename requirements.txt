@@ -1,5 +1,6 @@
 flask
 gunicorn
+mock
 nose
 pika
 psycopg2

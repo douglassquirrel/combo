@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from json import loads
+from mock import Mock
 from unittest import TestCase
 from web import combo_server
 
@@ -21,10 +22,6 @@ TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
 TEST_FACT = '{"headline": "Aliens Land", "body": "They just arriv--AAGH!"}'
 
-class MockFactspace:
-    def list_topics(self):
-        return TEST_TOPICS
-
 class MockPubSub:
     def subscribe(self, topic):
         self.last_subscription = {'topic': topic}
@@ -38,12 +35,8 @@ class ComboServerTest(TestCase):
         self.app = combo_server.app
         self.app.testing = True
         self.app.config['SERVER_NAME'] = 'foo.com'
-        self.app.config['FACTSPACE'] = MockFactspace()
         self.app.config['PUBSUB'] = MockPubSub()
         self.client = self.app.test_client()
-
-    def tearDown(self):
-        pass
 
     def test_home(self):
         self.app.config['HOME_HTML'] = TEST_HOME_PAGE
@@ -53,9 +46,11 @@ class ComboServerTest(TestCase):
         self.assertEqual(TEST_HOME_PAGE, response.data)
 
     def test_topics(self):
+        factspace = self._mock_factspace()
         response = self.client.get('/topics')
         self.assertEqual(200, response.status_code)
         self.assertEqual('application/json', response.content_type)
+        factspace.list_topics.assert_called_with()
         self.assertEqual(TEST_TOPICS_RESPONSE, loads(response.data))
 
     def test_publish(self):
@@ -83,3 +78,10 @@ class ComboServerTest(TestCase):
         #assert correct format
         self.assertEqual({'topic': TEST_TOPIC},
                          self.app.config['PUBSUB'].last_subscription)
+
+    def _mock_factspace(self):
+        MockFactspace = Mock()
+        MockFactspace.list_topics = Mock(return_value=TEST_TOPICS)
+        self.app.config['FACTSPACE'] = MockFactspace
+        return MockFactspace
+
