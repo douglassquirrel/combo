@@ -18,7 +18,7 @@ def topics():
 
 @app.route('/topics/<topic>/subscription', methods=['POST'])
 def subscription(topic):
-    subscription_id = app.config['PUBSUB'].subscribe(topic)
+    subscription_id = app.config['PUBSUB'].subscribe(topic=topic)
     return respond_json(subscription_id)
 
 @app.route('/topics/<topic>/facts', methods=['GET'])
@@ -27,7 +27,7 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
-    app.config['PUBSUB'].publish(topic, request.data)
+    app.config['PUBSUB'].publish(topic=topic, fact=request.data)
     return respond('', 'text/plain', status=202)
 
 def format_topic(topic):

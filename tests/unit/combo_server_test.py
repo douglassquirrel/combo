@@ -22,20 +22,11 @@ TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
 TEST_FACT = '{"headline": "Aliens Land", "body": "They just arriv--AAGH!"}'
 
-class MockPubSub:
-    def subscribe(self, topic):
-        self.last_subscription = {'topic': topic}
-        return '%s.subscription' % (topic,)
-
-    def publish(self, topic, fact):
-        self.last_fact = {'topic': topic, 'fact': fact}
-
 class ComboServerTest(TestCase):
     def setUp(self):
         self.app = combo_server.app
         self.app.testing = True
         self.app.config['SERVER_NAME'] = 'foo.com'
-        self.app.config['PUBSUB'] = MockPubSub()
         self.client = self.app.test_client()
 
     def test_home(self):
@@ -54,12 +45,13 @@ class ComboServerTest(TestCase):
         self.assertEqual(TEST_TOPICS_RESPONSE, loads(response.data))
 
     def test_publish(self):
+        pubsub = self._mock_pubsub(TEST_TOPIC, TEST_FACT)
         response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
                                     data=TEST_FACT)
         self.assertEqual(202, response.status_code)
         self.assertEqual('text/plain; charset=utf-8', response.content_type)
-        self.assertEqual({'topic': TEST_TOPIC, 'fact': TEST_FACT},
-                         self.app.config['PUBSUB'].last_fact)
+        pubsub.publish.assert_called_once_with(topic=TEST_TOPIC, 
+                                               fact=TEST_FACT)
 
     def test_get_last_10_facts(self):
         pass
@@ -71,13 +63,13 @@ class ComboServerTest(TestCase):
         pass
 
     def test_subscription(self):
+        pubsub = self._mock_pubsub(TEST_TOPIC, TEST_FACT)
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
         self.assertEqual(200, response.status_code)
         self.assertEqual('application/json', response.content_type)
         self.assertEqual(TEST_SUB_ID, loads(response.data))
         #assert correct format
-        self.assertEqual({'topic': TEST_TOPIC},
-                         self.app.config['PUBSUB'].last_subscription)
+        pubsub.subscribe.assert_called_once_with(topic=TEST_TOPIC)
 
     def _mock_factspace(self):
         MockFactspace = Mock()
@@ -85,3 +77,9 @@ class ComboServerTest(TestCase):
         self.app.config['FACTSPACE'] = MockFactspace
         return MockFactspace
 
+    def _mock_pubsub(self, topic, fact):
+        MockPubSub = Mock()
+        MockPubSub.subscribe = Mock(return_value='%s.subscription' % (topic,))
+        MockPubSub.publish = Mock(return_value={'topic': topic, 'fact': fact})
+        self.app.config['PUBSUB'] = MockPubSub
+        return MockPubSub
