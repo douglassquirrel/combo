@@ -7,17 +7,13 @@ from web import combo_server
 
 TEST_HOME_PAGE = 'test home page'
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
-#Use template, map here
-TEST_TOPICS_RESPONSE = \
-    [{'topic_name': 'headlines',
-      'facts_url': 'http://foo.com/topics/headlines/facts',
-      'subscription_url': 'http://foo.com/topics/headlines/subscription'},
-     {'topic_name': 'story.creation',
-      'facts_url': 'http://foo.com/topics/story.creation/facts',
-      'subscription_url': 'http://foo.com/topics/story.creation/subscription'},
-     {'topic_name': 'story.update',
-      'facts_url': 'http://foo.com/topics/story.update/facts',
-      'subscription_url': 'http://foo.com/topics/story.update/subscription'}]
+FACTS_URL_PATTERN = 'http://foo.com/topics/%s/facts'
+SUB_URL_PATTERN = 'http://foo.com/topics/%s/subscription'
+def make_topic_response_element(topic):
+    return {'topic_name': topic,
+            'facts_url': FACTS_URL_PATTERN % (topic,),
+            'subscription_url': SUB_URL_PATTERN % (topic,)}
+TEST_TOPICS_RESPONSE = map(make_topic_response_element, TEST_TOPICS)
 TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
 TEST_FACT = '{"headline": "Aliens Land", "body": "They just arriv--AAGH!"}'
