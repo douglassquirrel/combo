@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from json import loads
+from json import loads, dumps
 from mock import Mock
 from unittest import TestCase
 from web import combo_server
@@ -20,7 +20,9 @@ RETR_URL_PATTERN = 'http://foo.com/topics/%s/facts?subscription_id=%s'
 TEST_SUB_RESPONSE = {'retrieval_url': RETR_URL_PATTERN % (TEST_TOPIC,
                                                           TEST_SUB_ID),
                      'subscription_id': TEST_SUB_ID}
-TEST_FACT = '{"headline": "Aliens Land", "body": "They just arriv--AAGH!"}'
+TEST_FACTS = [{"headline": "Aliens Land", "body": "They just arriv--AAGH!"},
+              {"headline": "Moon Eaten", "body": "It's just gone!"},
+              {"headline": "Bananas Banned", "body": "Bad for teeth."}]
 
 class ComboServerTest(TestCase):
     def setUp(self):
@@ -31,30 +33,29 @@ class ComboServerTest(TestCase):
 
     def test_home(self):
         self.app.config['HOME_HTML'] = TEST_HOME_PAGE
-        response = self.client.get('/')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual('text/html; charset=utf-8', response.content_type)
-        self.assertEqual(TEST_HOME_PAGE, response.data)
+        self._assertResponsePlain(self.client.get('/'),
+                                  200, 'text/html', TEST_HOME_PAGE)
 
     def test_topics(self):
-        factspace = self._mock_factspace()
-        response = self.client.get('/topics')
-        self.assertEqual(200, response.status_code)
-        self.assertEqual('application/json', response.content_type)
+        factspace = self._mock_factspace(TEST_TOPICS, TEST_FACTS)
+        self._assertResponseJSON(self.client.get('/topics'),
+                                200, TEST_TOPICS_RESPONSE)
         factspace.list_topics.assert_called_with()
-        self.assertEqual(TEST_TOPICS_RESPONSE, loads(response.data))
 
     def test_publish(self):
-        pubsub = self._mock_pubsub(TEST_TOPIC, TEST_FACT)
+        pubsub = self._mock_pubsub(TEST_TOPIC)
         response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
-                                    data=TEST_FACT)
-        self.assertEqual(202, response.status_code)
-        self.assertEqual('text/plain; charset=utf-8', response.content_type)
+                                    data=dumps(TEST_FACTS[0]))
+        self._assertResponsePlain(response, 202, 'text/plain', '')
         pubsub.publish.assert_called_once_with(topic=TEST_TOPIC,
-                                               fact=TEST_FACT)
+                                               fact=dumps(TEST_FACTS[0]))
 
     def test_get_last_10_facts(self):
-        pass
+        pubsub = self._mock_factspace(TEST_TOPIC, TEST_FACTS)
+        response = self.client.get('/topics/%s/facts' % (TEST_TOPIC,))
+        self._assertResponseJSON(response, 200, TEST_FACTS)
+        pubsub.last_n.assert_called_with(10)
+
     def test_get_facts_after_id(self):
         pass
     def test_get_fact_from_subscription(self):
@@ -63,23 +64,31 @@ class ComboServerTest(TestCase):
         pass
 
     def test_subscription(self):
-        pubsub = self._mock_pubsub(TEST_TOPIC, TEST_FACT)
+        pubsub = self._mock_pubsub(TEST_TOPIC)
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
-        self.assertEqual(200, response.status_code)
-        self.assertEqual('application/json', response.content_type)
-        self.assertEqual(TEST_SUB_RESPONSE, loads(response.data))
-        #assert correct format
+        self._assertResponseJSON(response, 200, TEST_SUB_RESPONSE)
         pubsub.subscribe.assert_called_once_with(topic=TEST_TOPIC)
 
-    def _mock_factspace(self):
+    def _mock_factspace(self, topics, facts):
         MockFactspace = Mock()
-        MockFactspace.list_topics = Mock(return_value=TEST_TOPICS)
+        MockFactspace.list_topics = Mock(return_value=topics)
+        MockFactspace.last_n = Mock(return_value=facts)
         self.app.config['FACTSPACE'] = MockFactspace
         return MockFactspace
 
-    def _mock_pubsub(self, topic, fact):
+    def _mock_pubsub(self, topic):
         MockPubSub = Mock()
         MockPubSub.subscribe = Mock(return_value='%s.subscription' % (topic,))
-        MockPubSub.publish = Mock(return_value={'topic': topic, 'fact': fact})
         self.app.config['PUBSUB'] = MockPubSub
         return MockPubSub
+
+    def _assertResponsePlain(self, response, status_code, mimetype, data):
+        self.assertEqual(status_code, response.status_code)
+        self.assertEqual('%s; charset=utf-8' % (mimetype,),
+                         response.content_type)
+        self.assertEqual(data, response.data)
+
+    def _assertResponseJSON(self, response, status_code, data):
+        self.assertEqual(status_code, response.status_code)
+        self.assertEqual('application/json', response.content_type)
+        self.assertEqual(data, loads(response.data))
