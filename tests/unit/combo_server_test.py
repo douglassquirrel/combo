@@ -23,6 +23,7 @@ TEST_SUB_RESPONSE = {'retrieval_url': RETR_URL_PATTERN % (TEST_TOPIC,
 TEST_FACTS = [{"headline": "Aliens Land", "body": "They just arriv--AAGH!"},
               {"headline": "Moon Eaten", "body": "It's just gone!"},
               {"headline": "Bananas Banned", "body": "Bad for teeth."}]
+TEST_ID = 123
 
 class ComboServerTest(TestCase):
     def setUp(self):
@@ -53,17 +54,35 @@ class ComboServerTest(TestCase):
 
     def test_get_last_10_facts(self):
         factspace = self._mock_factspace()
+        self._mock_pubsub()
         factspace.last_n = Mock(return_value=TEST_FACTS)
         response = self.client.get('/topics/%s/facts' % (TEST_TOPIC,))
         self._assertResponseJSON(response, 200, TEST_FACTS)
         factspace.last_n.assert_called_with(TEST_TOPIC, 10)
 
     def test_get_facts_after_id(self):
-        pass
+        factspace = self._mock_factspace()
+        self._mock_pubsub()
+        factspace.after_id = Mock(return_value=TEST_FACTS)
+        url = '/topics/%s/facts?after_id=%d' % (TEST_TOPIC, TEST_ID)
+        self._assertResponseJSON(self.client.get(url), 200, TEST_FACTS)
+        factspace.after_id.assert_called_with(TEST_TOPIC, TEST_ID)
+
     def test_get_fact_from_subscription(self):
-        pass
+        self._mock_factspace()
+        pubsub = self._mock_pubsub()
+        pubsub.fetch_from_sub = Mock(return_value=TEST_FACTS[0])
+        url = '/topics/%s/facts?subscription_id=%s' % (TEST_TOPIC, TEST_SUB_ID)
+        self._assertResponseJSON(self.client.get(url), 200, TEST_FACTS[0])
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID)
+
     def test_get_fact_from_subscription_and_timeout(self):
-        pass
+        self._mock_factspace()
+        pubsub = self._mock_pubsub()
+        pubsub.fetch_from_sub = Mock(return_value=None)
+        url = '/topics/%s/facts?subscription_id=%s' % (TEST_TOPIC, TEST_SUB_ID)
+        self._assertResponsePlain(self.client.get(url), 204, 'text/plain', '')
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID)
 
     def test_subscription(self):
         pubsub = self._mock_pubsub()

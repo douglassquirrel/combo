@@ -23,11 +23,20 @@ def subscription(topic):
 
 @app.route('/topics/<topic>/facts', methods=['GET'])
 def get_facts(topic):
-    return respond_json(app.config['FACTSPACE'].last_n(topic, 10))
-#    after_id = request.args.get('after_id')
-#    sub_id = request.args.get('subscription_id')
-#    if after_id is None and sub_id is None:
-#        return respond_json(app.config['FACTSPACE']
+    factspace = app.config['FACTSPACE']
+    pubsub = app.config['PUBSUB']
+    after_id = request.args.get('after_id')
+    sub_id = request.args.get('subscription_id')
+    if after_id is not None:
+        return respond_json(factspace.after_id(topic, int(after_id)))
+    elif sub_id is not None:
+        result = pubsub.fetch_from_sub(topic, sub_id)
+        if result is not None:
+            return respond_json(result)
+        else:
+            return respond('', 'text/plain', 204)
+    else:
+        return respond_json(factspace.last_n(topic, 10))
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
