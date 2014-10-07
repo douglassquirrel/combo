@@ -23,7 +23,7 @@ def subscription(topic):
 
 @app.route('/topics/<topic>/facts', methods=['GET'])
 def get_facts(topic):
-    return respond_json(app.config['FACTSPACE'].last_n(10))
+    return respond_json(app.config['FACTSPACE'].last_n(topic, 10))
 #    after_id = request.args.get('after_id')
 #    sub_id = request.args.get('subscription_id')
 #    if after_id is None and sub_id is None:

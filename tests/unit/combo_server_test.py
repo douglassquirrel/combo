@@ -37,13 +37,14 @@ class ComboServerTest(TestCase):
                                   200, 'text/html', TEST_HOME_PAGE)
 
     def test_topics(self):
-        factspace = self._mock_factspace(TEST_TOPICS, TEST_FACTS)
+        factspace = self._mock_factspace()
+        factspace.list_topics = Mock(return_value=TEST_TOPICS)
         self._assertResponseJSON(self.client.get('/topics'),
                                 200, TEST_TOPICS_RESPONSE)
         factspace.list_topics.assert_called_with()
 
     def test_publish(self):
-        pubsub = self._mock_pubsub(TEST_TOPIC)
+        pubsub = self._mock_pubsub()
         response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
                                     data=dumps(TEST_FACTS[0]))
         self._assertResponsePlain(response, 202, 'text/plain', '')
@@ -51,10 +52,11 @@ class ComboServerTest(TestCase):
                                                fact=dumps(TEST_FACTS[0]))
 
     def test_get_last_10_facts(self):
-        pubsub = self._mock_factspace(TEST_TOPIC, TEST_FACTS)
+        factspace = self._mock_factspace()
+        factspace.last_n = Mock(return_value=TEST_FACTS)
         response = self.client.get('/topics/%s/facts' % (TEST_TOPIC,))
         self._assertResponseJSON(response, 200, TEST_FACTS)
-        pubsub.last_n.assert_called_with(10)
+        factspace.last_n.assert_called_with(TEST_TOPIC, 10)
 
     def test_get_facts_after_id(self):
         pass
@@ -64,23 +66,19 @@ class ComboServerTest(TestCase):
         pass
 
     def test_subscription(self):
-        pubsub = self._mock_pubsub(TEST_TOPIC)
+        pubsub = self._mock_pubsub()
+        pubsub.subscribe = Mock(return_value='%s.subscription' % (TEST_TOPIC,))
         response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
         self._assertResponseJSON(response, 200, TEST_SUB_RESPONSE)
         pubsub.subscribe.assert_called_once_with(topic=TEST_TOPIC)
 
-    def _mock_factspace(self, topics, facts):
-        MockFactspace = Mock()
-        MockFactspace.list_topics = Mock(return_value=topics)
-        MockFactspace.last_n = Mock(return_value=facts)
-        self.app.config['FACTSPACE'] = MockFactspace
-        return MockFactspace
+    def _mock_factspace(self):
+        self.app.config['FACTSPACE'] = Mock()
+        return self.app.config['FACTSPACE']
 
-    def _mock_pubsub(self, topic):
-        MockPubSub = Mock()
-        MockPubSub.subscribe = Mock(return_value='%s.subscription' % (topic,))
-        self.app.config['PUBSUB'] = MockPubSub
-        return MockPubSub
+    def _mock_pubsub(self):
+        self.app.config['PUBSUB'] = Mock()
+        return self.app.config['PUBSUB']
 
     def _assertResponsePlain(self, response, status_code, mimetype, data):
         self.assertEqual(status_code, response.status_code)
