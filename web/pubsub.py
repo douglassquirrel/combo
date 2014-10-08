@@ -13,3 +13,6 @@ class PubSub:
                                    routing_key=topic,
                                    body=fact)
 
+    def subscribe(self, topic):
+        queue = self.channel.queue_declare(exclusive=False).method.queue
+        return queue
