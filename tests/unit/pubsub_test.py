@@ -30,15 +30,21 @@ class PubSubTest(TestCase):
         self.channel.queue_bind(exchange=EXCHANGE, queue=queue,
                                 routing_key=TOPIC)
         self.pubsub.publish(TOPIC, dumps(FACT))
-        result = spin(lambda: self._check_queue(queue), 1)
-        if result is not None:
-            self.assertEqual(dumps(FACT), result)
-        else:
-            self.fail('timed out waiting for publication')
+        self._wait_for_queue(queue, FACT, 'publication')
 
     def test_subscribe(self):
-        sub_id = self.pubsub.subscribe(TOPIC)
-        queue = self.channel.queue_declare(queue=sub_id, passive=True)
+        queue = self.pubsub.subscribe(TOPIC)
+        self.channel.basic_publish(exchange=EXCHANGE,
+                                   routing_key=TOPIC,
+                                   body=dumps(FACT))
+        self._wait_for_queue(queue, FACT, 'published fact to arrive')
+
+    def _wait_for_queue(self, queue, fact, waiting_for):
+        result = spin(lambda: self._check_queue(queue), 1)
+        if result is not None:
+            self.assertEqual(dumps(fact), result)
+        else:
+            self.fail('timed out waiting for %s' % (waiting_for,))
 
     def _check_queue(self, queue):
         return self.channel.basic_get(queue=queue, no_ack=True)[2]

@@ -15,4 +15,6 @@ class PubSub:
 
     def subscribe(self, topic):
         queue = self.channel.queue_declare(exclusive=False).method.queue
+        self.channel.queue_bind(exchange=self.exchange, queue=queue,
+                                routing_key=topic)
         return queue
