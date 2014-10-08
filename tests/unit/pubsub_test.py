@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from mock import Mock
+from json import dumps
 from logging import getLogger, WARNING
 from pika import BlockingConnection, ConnectionParameters
 from time import time as now
@@ -37,11 +38,12 @@ class PubSubTest(TestCase):
         self.channel.queue_bind(exchange=EXCHANGE, queue=queue,
                                 routing_key=TOPIC)
         pubsub = PubSub(HOST, PORT, EXCHANGE)
-        pubsub.publish(TOPIC, FACT)
+        pubsub.publish(TOPIC, dumps(FACT))
         alarm = Alarm(1)
         while True:
             result = self.channel.basic_get(queue=queue, no_ack=True)[2]
             if result is not None:
-                self.assertEqual(FACT, result)
+                self.assertEqual(dumps(FACT), result)
+                return
             if alarm.is_ringing():
                 self.fail('timed out waiting for publication')
