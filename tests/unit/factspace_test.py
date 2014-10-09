@@ -24,7 +24,7 @@ class FactspaceTest(TestCase):
         try:
             self.conn = connect(host=HOST, user=USER, password=PASSWORD,
                                 database=DATABASE)
-            run_sql(self.conn, DROP_TABLE_SQL, results=False)
+            run_sql(self.conn, DROP_TABLE_SQL)
         except Exception as e:
             print 'Exception: %s' % e.message
             print_exc()

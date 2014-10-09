@@ -1,6 +1,6 @@
 from traceback import print_exc
 
-def run_sql(conn, sql, results=True, parameters=None):
+def run_sql(conn, sql, parameters=None):
     cursor = conn.cursor()
     try:
         if parameters is None:
@@ -8,8 +8,10 @@ def run_sql(conn, sql, results=True, parameters=None):
         else:
             cursor.execute(sql, parameters)
         conn.commit()
-        if results is True:
+        if cursor.rowcount >= 0:
             return cursor.fetchall()
+        else:
+            return None
     except Exception as e:
         print 'Exception: %s' % e.message
         print_exc()

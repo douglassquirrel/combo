@@ -12,4 +12,4 @@ class Factspace:
     def __init__(self, host, user, password, database):
         self.conn = connect(host=host, user=user, password=password,
                             database=database)
-        run_sql(self.conn, CREATE_FACTS_TABLE_SQL, results=False)
+        run_sql(self.conn, CREATE_FACTS_TABLE_SQL)
