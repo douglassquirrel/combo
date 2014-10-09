@@ -6,6 +6,7 @@ from logging import getLogger, WARNING
 from pika import BlockingConnection, ConnectionParameters
 from sys import exit
 from time import time as now
+from traceback import print_exc
 from unittest import TestCase
 from web.spinner import spin
 from web.pubsub import PubSub
@@ -23,7 +24,8 @@ class PubSubTest(TestCase):
             self.conn = BlockingConnection(ConnectionParameters(host=HOST,
                                                                 port=PORT))
         except Exception as e:
-            print e
+            print 'Exception: %s' % e.message
+            print_exc()
             print 'Expect RabbitMQ running on %s at port %d' % (HOST, PORT)
             exit(1)
 
