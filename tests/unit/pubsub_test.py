@@ -38,6 +38,16 @@ class PubSubTest(TestCase):
                                    body=dumps(FACT))
         self._wait_for_queue(queue, FACT, 'published fact to arrive')
 
+    def test_fetch_from_sub(self):
+        queue = self.channel.queue_declare(exclusive=False).method.queue
+        self.channel.queue_bind(exchange=EXCHANGE, queue=queue,
+                                routing_key='fetch_from_sub_test_topic')
+        self.channel.basic_publish(exchange=EXCHANGE,
+                                   routing_key='fetch_from_sub_test_topic',
+                                   body=dumps(FACT))
+        fact = self.pubsub.fetch_from_sub('fetch_from_sub_test_topic', queue)
+        self.assertEqual(fact, dumps(FACT))
+
     def _wait_for_queue(self, queue, fact, waiting_for):
         result = spin(lambda: self._check_queue(queue), 1)
         if result is not None:

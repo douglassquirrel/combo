@@ -18,3 +18,6 @@ class PubSub:
         self.channel.queue_bind(exchange=self.exchange, queue=queue,
                                 routing_key=topic)
         return queue
+
+    def fetch_from_sub(self, topic, queue):
+        return self.channel.basic_get(queue=queue, no_ack=True)[2]
