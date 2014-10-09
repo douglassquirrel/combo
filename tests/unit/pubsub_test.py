@@ -14,7 +14,6 @@ getLogger('pika').setLevel(WARNING)
 HOST = 'localhost'
 PORT = 5672
 EXCHANGE = 'unittest'
-TOPIC = 'news'
 FACT = {"headline": "Aliens Land", "body": "They just arriv--AAGH!"}
 
 class PubSubTest(TestCase):
@@ -28,14 +27,14 @@ class PubSubTest(TestCase):
     def test_publish(self):
         queue = self.channel.queue_declare(exclusive=True).method.queue
         self.channel.queue_bind(exchange=EXCHANGE, queue=queue,
-                                routing_key=TOPIC)
-        self.pubsub.publish(TOPIC, dumps(FACT))
+                                routing_key='publish_test_topic')
+        self.pubsub.publish('publish_test_topic', dumps(FACT))
         self._wait_for_queue(queue, FACT, 'publication')
 
     def test_subscribe(self):
-        queue = self.pubsub.subscribe(TOPIC)
+        queue = self.pubsub.subscribe('subscribe_test_topic')
         self.channel.basic_publish(exchange=EXCHANGE,
-                                   routing_key=TOPIC,
+                                   routing_key='subscribe_test_topic',
                                    body=dumps(FACT))
         self._wait_for_queue(queue, FACT, 'published fact to arrive')
 
