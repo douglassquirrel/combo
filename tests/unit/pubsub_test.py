@@ -48,6 +48,16 @@ class PubSubTest(TestCase):
         fact = self.pubsub.fetch_from_sub('fetch_from_sub_test_topic', queue)
         self.assertEqual(fact, dumps(FACT))
 
+    def test_fetch_from_sub_timeout(self):
+        queue = self.channel.queue_declare(exclusive=False).method.queue
+        self.channel.queue_bind(exchange=EXCHANGE, queue=queue,
+                                routing_key='timeout_test_topic')
+        spin = Mock(return_value=None)
+        result = self.pubsub.fetch_from_sub('timeout_test_topic', queue,
+                                            spin=spin)
+        self.assertIsNone(result)
+        self.assertEqual(10, spin.call_args[0][1])
+
     def _wait_for_queue(self, queue, fact, waiting_for):
         result = spin(lambda: self._check_queue(queue), 1)
         if result is not None:

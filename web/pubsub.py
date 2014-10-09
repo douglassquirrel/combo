@@ -1,4 +1,5 @@
 from pika import BlockingConnection, ConnectionParameters
+from web.spinner import spin
 
 class PubSub:
     def __init__(self, host, port, exchange):
@@ -19,5 +20,8 @@ class PubSub:
                                 routing_key=topic)
         return queue
 
-    def fetch_from_sub(self, topic, queue):
+    def fetch_from_sub(self, topic, queue, spin=spin):
+        return spin(lambda: self._check_queue(queue), 10)
+
+    def _check_queue(self, queue):
         return self.channel.basic_get(queue=queue, no_ack=True)[2]
