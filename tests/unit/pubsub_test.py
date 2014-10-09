@@ -4,6 +4,7 @@ from mock import Mock
 from json import dumps
 from logging import getLogger, WARNING
 from pika import BlockingConnection, ConnectionParameters
+from sys import exit
 from time import time as now
 from unittest import TestCase
 from web.spinner import spin
@@ -18,8 +19,14 @@ FACT = {"headline": "Aliens Land", "body": "They just arriv--AAGH!"}
 
 class PubSubTest(TestCase):
     def setUp(self):
-        self.conn = BlockingConnection(ConnectionParameters(host=HOST,
-                                                            port=PORT))
+        try:
+            self.conn = BlockingConnection(ConnectionParameters(host=HOST,
+                                                                port=PORT))
+        except Exception as e:
+            print e
+            print 'Expect RabbitMQ running on %s at port %d' % (HOST, PORT)
+            exit(1)
+
         self.channel = self.conn.channel()
         self.channel.exchange_declare(exchange=EXCHANGE, type='topic')
         self.pubsub = PubSub(HOST, PORT, EXCHANGE)
