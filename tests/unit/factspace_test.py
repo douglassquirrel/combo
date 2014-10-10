@@ -58,6 +58,12 @@ class FactspaceTest(TestCase):
         raw_facts = map(self._check_and_extract, factspace.last_n(TOPIC, 2))
         self.assertEqual(FACTS[-2:], raw_facts)
 
+    def test_after_id(self):
+        factspace = Factspace(HOST, USER, PASSWORD, DATABASE)
+        self._add_facts(TOPIC, FACTS)
+        raw_facts = map(self._check_and_extract, factspace.after_id(TOPIC, 1))
+        self.assertEqual(FACTS[-2:], raw_facts)
+
     def _check_and_extract(self, returned_fact):
         self.assertIn('combo_id', returned_fact)
         self.assertIn('combo_timestamp', returned_fact)
