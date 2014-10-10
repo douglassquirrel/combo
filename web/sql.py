@@ -1,6 +1,6 @@
 from traceback import print_exc
 
-def run_sql(conn, sql, parameters=None):
+def run_sql(conn, sql, results, parameters=None):
     cursor = conn.cursor()
     try:
         if parameters is None:
@@ -8,7 +8,7 @@ def run_sql(conn, sql, parameters=None):
         else:
             cursor.execute(sql, parameters)
         conn.commit()
-        if cursor.rowcount >= 0:
+        if results is True:
             return cursor.fetchall()
         else:
             return None

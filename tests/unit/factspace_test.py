@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+from json import dumps
 from mock import Mock
 from psycopg2 import connect
 from sys import exit
@@ -13,10 +14,19 @@ USER = 'combo'
 PASSWORD = 'combo'
 DATABASE = 'combo'
 
+TOPIC = 'news'
+FACTS = [{"headline": "Aliens Land", "body": "They just arriv--AAGH!"},
+         {"headline": "Moon Eaten", "body": "It's just gone!"},
+         {"headline": "Bananas Banned", "body": "Bad for teeth."}]
+
 DROP_TABLE_SQL = 'DROP TABLE IF EXISTS facts'
 
 CHECK_TABLE_SQL = '''
 SELECT COUNT(1) FROM information_schema.tables WHERE table_name = 'facts';
+'''
+
+INSERT_FACT_SQL = '''
+INSERT INTO facts (topic, ts, content) VALUES (%s, now(), %s);
 '''
 
 class FactspaceTest(TestCase):
@@ -24,7 +34,7 @@ class FactspaceTest(TestCase):
         try:
             self.conn = connect(host=HOST, user=USER, password=PASSWORD,
                                 database=DATABASE)
-            run_sql(self.conn, DROP_TABLE_SQL)
+            run_sql(self.conn, DROP_TABLE_SQL, results=False)
         except Exception as e:
             print 'Exception: %s' % e.message
             print_exc()
@@ -42,5 +52,25 @@ class FactspaceTest(TestCase):
         self.assertTrue(self._facts_table_exists(),
                         'facts table should be created on construction')
 
+    def test_last_n(self):
+        factspace = Factspace(HOST, USER, PASSWORD, DATABASE)
+        self._add_facts(TOPIC, FACTS)
+        raw_facts = map(self._check_and_extract, factspace.last_n(TOPIC, 2))
+        self.assertEqual(FACTS[-2:], raw_facts)
+
+    def _check_and_extract(self, returned_fact):
+        self.assertIn('combo_id', returned_fact)
+        self.assertIn('combo_timestamp', returned_fact)
+        raw_fact = dict(returned_fact)
+        del raw_fact['combo_id']
+        del raw_fact['combo_timestamp']
+        return raw_fact
+
     def _facts_table_exists(self):
-        return run_sql(self.conn, CHECK_TABLE_SQL)[0][0] > 0
+        return run_sql(self.conn, CHECK_TABLE_SQL, results=True)[0][0] > 0
+
+    def _add_facts(self, topic, facts):
+        for fact in facts:
+            run_sql(self.conn, INSERT_FACT_SQL, results=False,
+                    parameters=[topic, dumps(fact)])
+            
