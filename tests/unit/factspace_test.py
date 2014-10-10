@@ -64,6 +64,13 @@ class FactspaceTest(TestCase):
         raw_facts = map(self._check_and_extract, factspace.after_id(TOPIC, 1))
         self.assertEqual(FACTS[-2:], raw_facts)
 
+    def test_list_topics(self):
+        factspace = Factspace(HOST, USER, PASSWORD, DATABASE)
+        self._add_facts('news', FACTS)
+        self._add_facts('views',
+                        {"headline": "Outlaw Black", "body": "Too dark"})
+        self.assertItemsEqual(['news', 'views'], factspace.list_topics())
+
     def _check_and_extract(self, returned_fact):
         self.assertIn('combo_id', returned_fact)
         self.assertIn('combo_timestamp', returned_fact)
@@ -79,4 +86,3 @@ class FactspaceTest(TestCase):
         for fact in facts:
             run_sql(self.conn, INSERT_FACT_SQL, results=False,
                     parameters=[topic, dumps(fact)])
-            
