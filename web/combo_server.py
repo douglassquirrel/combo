@@ -9,17 +9,17 @@ app = Flask('combo')
 
 @app.route('/')
 def home():
-    return respond(app.config['HOME_HTML'], mimetype='text/html')
+    return _respond(app.config['HOME_HTML'], mimetype='text/html')
 
 @app.route('/topics', methods=['GET'])
 def topics():
     topics = app.config['FACTSPACE'].list_topics()
-    return respond_json(map(format_topic, topics))
+    return _respond_json(map(_format_topic, topics))
 
 @app.route('/topics/<topic>/subscription', methods=['POST'])
 def subscription(topic):
     subscription_id = app.config['PUBSUB'].subscribe(topic=topic)
-    return respond_json(format_subscription(topic, subscription_id))
+    return _respond_json(_format_subscription(topic, subscription_id))
 
 @app.route('/topics/<topic>/facts', methods=['GET'])
 def get_facts(topic):
@@ -28,41 +28,41 @@ def get_facts(topic):
     after_id = request.args.get('after_id')
     sub_id = request.args.get('subscription_id')
     if after_id is not None:
-        return respond_json(factspace.after_id(topic, int(after_id)))
+        return _respond_json(factspace.after_id(topic, int(after_id)))
     elif sub_id is not None:
         result = pubsub.fetch_from_sub(topic, sub_id)
         if result is not None:
-            return respond_json(result)
+            return _respond_json(result)
         else:
-            return respond('', 'text/plain', 204)
+            return _respond('', 'text/plain', 204)
     else:
-        return respond_json(factspace.last_n(topic, 10))
+        return _respond_json(factspace.last_n(topic, 10))
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
     app.config['PUBSUB'].publish(topic=topic, fact=request.data)
-    return respond('', 'text/plain', status=202)
+    return _respond('', 'text/plain', status=202)
 
-def format_topic(topic):
+def _format_topic(topic):
     return {'topic_name': topic,
-            'subscription_url': ext_url_for('subscription', topic),
-            'facts_url': ext_url_for('get_facts', topic)}
+            'subscription_url': _ext_url_for('subscription', topic),
+            'facts_url': _ext_url_for('get_facts', topic)}
 
-def format_subscription(topic, sub_id):
-    RETRIEVAL_URL = ext_url_for('get_facts', topic) \
+def _format_subscription(topic, sub_id):
+    RETRIEVAL_URL = _ext_url_for('get_facts', topic) \
                       + '?subscription_id=%s' % (sub_id,)
     return {'retrieval_url': RETRIEVAL_URL, 'subscription_id': sub_id}
 
-def respond(data, mimetype, status=200):
+def _respond(data, mimetype, status=200):
     response = Response(data, mimetype=mimetype)
     response.charset = app.config['CHARSET']
     response.status_code = status
     return response
 
-def respond_json(data):
-    return respond(dumps(data), mimetype='application/json')
+def _respond_json(data):
+    return _respond(dumps(data), mimetype='application/json')
 
-def ext_url_for(function, topic):
+def _ext_url_for(function, topic):
     return url_for(function, topic=topic, _external=True)
 
 default_config_file = pathjoin(dirname(__file__), 'settings.cfg')
