@@ -1,5 +1,5 @@
 from psycopg2 import connect
-from sql import run_sql
+from util.sql import run_sql
 
 CREATE_FACTS_TABLE_SQL = '''
     CREATE TABLE IF NOT EXISTS facts (id serial primary key,

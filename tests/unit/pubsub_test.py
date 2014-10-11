@@ -8,7 +8,7 @@ from sys import exit
 from time import time as now
 from traceback import print_exc
 from unittest import TestCase
-from web.spinner import spin
+from util.spinner import spin
 from web.pubsub import PubSub
 
 getLogger('pika').setLevel(WARNING)

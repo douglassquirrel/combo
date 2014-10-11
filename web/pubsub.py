@@ -1,5 +1,5 @@
 from pika import BlockingConnection, ConnectionParameters
-from web.spinner import spin
+from util.spinner import spin
 
 class PubSub:
     def __init__(self, host, port, exchange):

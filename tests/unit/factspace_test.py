@@ -6,8 +6,8 @@ from psycopg2 import connect
 from sys import exit
 from traceback import print_exc
 from unittest import TestCase
+from util.sql import run_sql
 from web.factspace import Factspace
-from web.sql import run_sql
 
 HOST = 'localhost'
 USER = 'combo'
