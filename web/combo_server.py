@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from flask import Flask, Response, request, url_for
-from json import dumps
+from json import dumps, loads
 from os import environ
 from os.path import dirname, join as pathjoin
 
@@ -40,7 +40,7 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
-    app.config['PUBSUB'].publish(topic=topic, fact=request.data)
+    app.config['PUBSUB'].publish(topic=topic, fact=loads(request.data))
     return _respond('', 'text/plain', status=202)
 
 def _format_topic(topic):

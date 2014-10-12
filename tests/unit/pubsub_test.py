@@ -4,12 +4,16 @@ from mock import Mock
 from json import dumps
 from logging import getLogger, WARNING
 from pika import BlockingConnection, ConnectionParameters
+from Queue import Empty, Queue as PythonQueue
 from sys import exit
 from time import time as now
+from threading import Thread
 from traceback import print_exc
 from unittest import TestCase
 from util.spinner import spin
 from web.pubsub import PubSub
+
+from time import sleep
 
 getLogger('pika').setLevel(WARNING)
 
@@ -17,6 +21,7 @@ HOST = 'localhost'
 PORT = 5672
 EXCHANGE = 'unittest'
 FACT = {"headline": "Aliens Land", "body": "They just arriv--AAGH!"}
+FACT2 = {"headline": "Moon Eaten", "body": "It's just gone!"}
 
 class PubSubTest(TestCase):
     def setUp(self):
@@ -37,14 +42,12 @@ class PubSubTest(TestCase):
         queue = self.channel.queue_declare(exclusive=True).method.queue
         self.channel.queue_bind(exchange=EXCHANGE, queue=queue,
                                 routing_key='publish_test_topic')
-        self.pubsub.publish('publish_test_topic', dumps(FACT))
+        self.pubsub.publish('publish_test_topic', FACT)
         self._wait_for_queue(queue, FACT, 'publication')
 
     def test_subscribe(self):
         queue = self.pubsub.subscribe('subscribe_test_topic')
-        self.channel.basic_publish(exchange=EXCHANGE,
-                                   routing_key='subscribe_test_topic',
-                                   body=dumps(FACT))
+        self._publish_fact('subscribe_test_topic', FACT)
         self._wait_for_queue(queue, FACT, 'published fact to arrive')
 
     def test_fetch_from_sub(self):
@@ -55,7 +58,7 @@ class PubSubTest(TestCase):
                                    routing_key='fetch_from_sub_test_topic',
                                    body=dumps(FACT))
         fact = self.pubsub.fetch_from_sub('fetch_from_sub_test_topic', queue)
-        self.assertEqual(fact, dumps(FACT))
+        self.assertEqual(fact, FACT)
 
     def test_fetch_from_sub_timeout(self):
         queue = self.channel.queue_declare(exclusive=False).method.queue
@@ -66,6 +69,33 @@ class PubSubTest(TestCase):
                                             spin=spin)
         self.assertIsNone(result)
         self.assertEqual(10, spin.call_args[0][1])
+
+    def test_consume(self):
+        queue = PythonQueue()
+        thread = Thread(target=self._consume_caller, args=('news', queue))
+        thread.daemon = True
+        thread.start()
+        sleep(1)
+        self._publish_fact('news', FACT)
+        self._publish_fact('news', FACT2)
+        self._assertPythonQueue(queue, {'topic': 'news', 'fact': FACT})
+        self._assertPythonQueue(queue, {'topic': 'news', 'fact': FACT2})
+
+    def _consume_caller(self, topic, queue):
+        consumer = lambda t, f: queue.put({'topic': t, 'fact': f})
+        self.pubsub.consume(topic, consumer)
+
+    def _publish_fact(self, topic, fact):
+        self.channel.basic_publish(exchange=EXCHANGE,
+                                   routing_key=topic,
+                                   body=dumps(fact))
+
+    def _assertPythonQueue(self,queue, expected):
+        try:
+            actual = queue.get(block=True, timeout=1)
+            self.assertEqual(expected, actual)
+        except Empty:
+            self.fail('timed out waiting for %s' % (expected,))
 
     def _wait_for_queue(self, queue, fact, waiting_for):
         result = spin(lambda: self._check_queue(queue), 1)

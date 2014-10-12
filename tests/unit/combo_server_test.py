@@ -50,7 +50,7 @@ class ComboServerTest(TestCase):
                                     data=dumps(TEST_FACTS[0]))
         self._assertResponsePlain(response, 202, 'text/plain', '')
         pubsub.publish.assert_called_once_with(topic=TEST_TOPIC,
-                                               fact=dumps(TEST_FACTS[0]))
+                                               fact=TEST_FACTS[0])
 
     def test_get_last_10_facts(self):
         factspace = self._mock_factspace()
