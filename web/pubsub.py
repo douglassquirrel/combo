@@ -22,11 +22,7 @@ class PubSub:
         return queue
 
     def fetch_from_sub(self, topic, queue, spin=spin):
-        result = spin(lambda: self._check_queue(queue), 10)
-        if result is not None:
-            return loads(result)
-        else:
-            return None
+        return self._safe_loads(spin(lambda: self._check_queue(queue), 10))
 
     def consume(self, topic, consumer):
         def rabbit_consumer(channel, method, properties, body):
@@ -37,3 +33,9 @@ class PubSub:
 
     def _check_queue(self, queue):
         return self.channel.basic_get(queue=queue, no_ack=True)[2]
+
+    def _safe_loads(self, value):
+        if value is None:
+            return None
+        else:
+            return loads(value)
