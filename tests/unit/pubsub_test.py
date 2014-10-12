@@ -6,14 +6,12 @@ from logging import getLogger, WARNING
 from pika import BlockingConnection, ConnectionParameters
 from Queue import Empty, Queue as PythonQueue
 from sys import exit
-from time import time as now
+from time import sleep, time as now
 from threading import Thread
 from traceback import print_exc
 from unittest import TestCase
 from util.spinner import spin
 from web.pubsub import PubSub
-
-from time import sleep
 
 getLogger('pika').setLevel(WARNING)
 
@@ -75,7 +73,7 @@ class PubSubTest(TestCase):
         thread = Thread(target=self._consume_caller, args=('news', queue))
         thread.daemon = True
         thread.start()
-        sleep(1)
+        sleep(0.1)
         self._publish_fact('news', FACT)
         self._publish_fact('news', FACT2)
         self._assertPythonQueue(queue, {'topic': 'news', 'fact': FACT})
