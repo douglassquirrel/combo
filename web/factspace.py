@@ -1,3 +1,4 @@
+from json import dumps
 from util.sql import connect, run_sql
 
 CREATE_FACTS_TABLE_SQL = '''
@@ -16,6 +17,9 @@ GET_LAST_N_FACTS_SQL = '''
 GET_AFTER_ID_FACTS_SQL = '''
     SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, content
           FROM facts WHERE topic = %s AND id > %s ORDER BY id ASC
+'''
+INSERT_FACT_SQL = '''
+    INSERT INTO facts (topic, ts, content) VALUES (%s, now(), %s);
 '''
 
 class Factspace:
@@ -37,6 +41,10 @@ class Factspace:
         result = run_sql(self.conn, GET_AFTER_ID_FACTS_SQL,
                          results=True, parameters=[topic, id])
         return map(self._format_fact, result)
+
+    def add_fact(self, topic, fact):
+        run_sql(self.conn, INSERT_FACT_SQL, results=False,
+                parameters=[topic, dumps(fact)])
 
     def _format_fact(self, returned_fact):
         fact = dict(returned_fact[2])

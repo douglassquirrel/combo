@@ -28,6 +28,8 @@ INSERT_FACT_SQL = '''
 INSERT INTO facts (topic, ts, content) VALUES (%s, now(), %s);
 '''
 
+GET_FACTS_SQL = 'SELECT id, ts, topic, content FROM facts'
+
 class FactspaceTest(TestCase):
     def setUp(self):
         try:
@@ -69,6 +71,16 @@ class FactspaceTest(TestCase):
         self._add_facts('views',
                         {"headline": "Outlaw Black", "body": "Too dark"})
         self.assertItemsEqual(['news', 'views'], factspace.list_topics())
+
+    def test_add_fact(self):
+        factspace = Factspace(HOST, USER, PASSWORD, DATABASE)
+        factspace.add_fact('news', FACTS[0])
+        results = run_sql(self.conn, GET_FACTS_SQL, results=True)
+        self.assertEqual(1, len(results))
+        self.assertEqual(4, len(results[0]))
+        id, ts, topic, fact = results[0]
+        self.assertEqual('news', topic)
+        self.assertEqual(FACTS[0], fact)
 
     def _check_and_extract(self, returned_fact):
         self.assertIn('combo_id', returned_fact)
