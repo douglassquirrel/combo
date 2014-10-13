@@ -10,7 +10,7 @@ from time import sleep, time as now
 from threading import Thread
 from traceback import print_exc
 from unittest import TestCase
-from util.spinner import spin
+from web.spinner import spin
 from web.pubsub import PubSub
 
 getLogger('pika').setLevel(WARNING)

@@ -1,6 +1,6 @@
 from json import dumps, loads
 from pika import BlockingConnection, URLParameters
-from util.spinner import spin
+from spinner import spin
 
 class PubSub:
     def __init__(self, url, exchange):

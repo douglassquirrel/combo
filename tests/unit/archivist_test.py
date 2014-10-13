@@ -2,7 +2,7 @@
 
 from mock import Mock
 from unittest import TestCase
-from archivist.archivist import run
+from web.archivist import run
 
 TOPIC_WILDCARD = '#'
 TOPIC = 'story.creation'

@@ -1,5 +1,5 @@
 from json import dumps
-from util.sql import connect, run_sql
+from sql import connect, run_sql
 
 CREATE_FACTS_TABLE_SQL = '''
     CREATE TABLE IF NOT EXISTS facts (id serial primary key,

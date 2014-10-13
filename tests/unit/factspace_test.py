@@ -5,7 +5,7 @@ from mock import Mock
 from sys import exit
 from traceback import print_exc
 from unittest import TestCase
-from util.sql import connect, run_sql
+from web.sql import connect, run_sql
 from web.factspace import Factspace
 
 PG_URL = 'postgres://combo:combo@localhost/combo'
