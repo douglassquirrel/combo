@@ -1,9 +1,8 @@
 from psycopg2 import connect as pg_connect
 from traceback import print_exc
 
-def connect(host, user, password, database):
-    return pg_connect(host=host, user=user, password=password,
-                      database=database)
+def connect(url):
+    return pg_connect(url)
 
 def run_sql(conn, sql, results, parameters=None):
     cursor = conn.cursor()

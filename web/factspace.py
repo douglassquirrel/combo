@@ -23,9 +23,8 @@ INSERT_FACT_SQL = '''
 '''
 
 class Factspace:
-    def __init__(self, host, user, password, database):
-        self.conn = connect(host=host, user=user, password=password,
-                            database=database)
+    def __init__(self, url):
+        self.conn = connect(url)
         run_sql(self.conn, CREATE_FACTS_TABLE_SQL, results=False)
 
     def list_topics(self):
