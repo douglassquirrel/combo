@@ -3,7 +3,7 @@
 from mock import Mock
 from json import dumps
 from logging import getLogger, WARNING
-from pika import BlockingConnection, ConnectionParameters
+from pika import BlockingConnection, URLParameters
 from Queue import Empty, Queue as PythonQueue
 from sys import exit
 from time import sleep, time as now
@@ -15,8 +15,7 @@ from web.pubsub import PubSub
 
 getLogger('pika').setLevel(WARNING)
 
-HOST = 'localhost'
-PORT = 5672
+RABBIT_URL = 'amqp://guest:guest@localhost:5672'
 EXCHANGE = 'unittest'
 FACT = {"headline": "Aliens Land", "body": "They just arriv--AAGH!"}
 FACT2 = {"headline": "Moon Eaten", "body": "It's just gone!"}
@@ -24,17 +23,16 @@ FACT2 = {"headline": "Moon Eaten", "body": "It's just gone!"}
 class PubSubTest(TestCase):
     def setUp(self):
         try:
-            self.conn = BlockingConnection(ConnectionParameters(host=HOST,
-                                                                port=PORT))
+            self.conn = BlockingConnection(URLParameters(RABBIT_URL))
         except Exception as e:
             print 'Exception: %s' % e.message
             print_exc()
-            print 'Expect RabbitMQ running on %s at port %d' % (HOST, PORT)
+            print 'Expect RabbitMQ running on %s' % (RABBIT_URL,)
             exit(1)
 
         self.channel = self.conn.channel()
         self.channel.exchange_declare(exchange=EXCHANGE, type='topic')
-        self.pubsub = PubSub(HOST, PORT, EXCHANGE)
+        self.pubsub = PubSub(RABBIT_URL, EXCHANGE)
 
     def test_publish(self):
         queue = self.channel.queue_declare(exclusive=True).method.queue

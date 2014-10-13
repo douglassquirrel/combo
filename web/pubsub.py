@@ -1,11 +1,10 @@
 from json import dumps, loads
-from pika import BlockingConnection, ConnectionParameters
+from pika import BlockingConnection, URLParameters
 from util.spinner import spin
 
 class PubSub:
-    def __init__(self, host, port, exchange):
-        self.conn = BlockingConnection(ConnectionParameters(host=host,
-                                                            port=port))
+    def __init__(self, url, exchange):
+        self.conn = BlockingConnection(URLParameters(url))
         self.channel = self.conn.channel()
         self.channel.exchange_declare(exchange=exchange, type='topic')
         self.exchange = exchange
