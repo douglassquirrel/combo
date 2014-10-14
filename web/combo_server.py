@@ -65,7 +65,7 @@ def _respond_json(data):
 def _ext_url_for(function, topic):
     return url_for(function, topic=topic, _external=True)
 
-default_config_file = pathjoin(dirname(__file__), 'settings.cfg')
+default_config_file = pathjoin(dirname(__file__), 'settings.py')
 config_file = environ.get('COMBO_SETTINGS_FILE', default_config_file)
 app.config.from_pyfile(config_file)
 
