@@ -1,1 +1,2 @@
-web: gunicorn web.combo_server:app --log-file - 
+web: gunicorn web.combo_server:app --log-file - -w 4 -k eventlet
+archivist: python -m web.archivist

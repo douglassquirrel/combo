@@ -2,6 +2,7 @@
 
 from flask import Flask, Response, request, url_for
 from json import dumps, loads
+from logging import INFO, StreamHandler
 from os import environ
 from os.path import dirname, join as pathjoin
 
@@ -40,7 +41,8 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
-    app.config['PUBSUB'].publish(topic=topic, fact=loads(request.data))
+    fact = request.get_json(force=True)
+    app.config['PUBSUB'].publish(topic=topic, fact=fact)
     return _respond('', 'text/plain', status=202)
 
 def _format_topic(topic):
@@ -68,6 +70,11 @@ def _ext_url_for(function, topic):
 default_config_file = pathjoin(dirname(__file__), 'settings.py')
 config_file = environ.get('COMBO_SETTINGS_FILE', default_config_file)
 app.config.from_pyfile(config_file)
+
+if not app.debug:
+    stream_handler = StreamHandler()
+    stream_handler.setLevel(INFO)
+    app.logger.addHandler(stream_handler)
 
 if __name__ == '__main__':
     app.run()
