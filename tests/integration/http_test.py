@@ -57,6 +57,23 @@ class HTTPTest(TestCase):
         returned_ids = self._extract_fact_ids(response)
         self.assertEqual(all_ids[1:], returned_ids)
         
+    def test_subscribe_and_retrieve(self):
+        topic = self._new_unique_topic()
+        response = self._visit(verb='POST',
+                               path='topics/%s/subscription' % (topic,),
+                               exp_status=200,
+                               exp_content_type=JSON_CONTENT_TYPE)
+        sub_id = loads(response.read())['subscription_id']
+
+        self._publish_fact(topic, FACTS[0])
+        path = '/topics/%s/facts?subscription_id=%s' % (topic, sub_id)
+        response = self._visit(verb='GET', path=path, exp_status=200,
+                               exp_content_type=JSON_CONTENT_TYPE)
+        self.assertEqual(FACTS[0], loads(response.read()))
+        
+    def test_subscribe_and_timeout(self):
+        topic = self._new_unique_topic()
+
     def _extract_fact_ids(self, response):
         return map(lambda f: f['combo_id'], loads(response.read()))
 
