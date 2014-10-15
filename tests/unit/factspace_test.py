@@ -1,12 +1,13 @@
 #! /usr/bin/env python
 
+from web.reset import recreate_facts_table
 from json import dumps
 from mock import Mock
 from sys import exit
 from traceback import print_exc
 from unittest import TestCase
 from web.sql import connect, run_sql
-from web.factspace import Factspace
+from web.factspace import Factspace, MissingTableError
 
 PG_URL = 'postgres://combo:combo@localhost/combo'
 
@@ -31,7 +32,7 @@ class FactspaceTest(TestCase):
     def setUp(self):
         try:
             self.conn = connect(PG_URL)
-            run_sql(self.conn, DROP_TABLE_SQL, results=False)
+            recreate_facts_table(self.conn)
         except Exception as e:
             print 'Exception: %s' % e.message
             print_exc()
@@ -41,12 +42,15 @@ class FactspaceTest(TestCase):
     def tearDown(self):
         self.conn.close()
 
-    def test_create_table_on_construction(self):
+    def test_fail_on_construction_if_no_table(self):
+        run_sql(self.conn, DROP_TABLE_SQL, results=False)
         self.assertFalse(self._facts_table_exists(),
-                         'Should be no facts table on startup')
-        factspace = Factspace(PG_URL)
-        self.assertTrue(self._facts_table_exists(),
-                        'facts table should be created on construction')
+                         'Should be no facts table after drop')
+        try:
+            factspace = Factspace(PG_URL)
+            self.fail('Should fail when no facts table')
+        except MissingTableError:
+            pass #expected
 
     def test_last_n(self):
         factspace = Factspace(PG_URL)
