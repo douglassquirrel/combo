@@ -73,6 +73,14 @@ class HTTPTest(TestCase):
         
     def test_subscribe_and_timeout(self):
         topic = self._new_unique_topic()
+        response = self._visit(verb='POST',
+                               path='topics/%s/subscription' % (topic,),
+                               exp_status=200,
+                               exp_content_type=JSON_CONTENT_TYPE)
+        sub_id = loads(response.read())['subscription_id']
+        path = '/topics/%s/facts?subscription_id=%s' % (topic, sub_id)
+        response = self._visit(verb='GET', path=path, exp_status=204,
+                               exp_content_type=TEXT_CONTENT_TYPE)
 
     def _extract_fact_ids(self, response):
         return map(lambda f: f['combo_id'], loads(response.read()))
