@@ -41,6 +41,25 @@ class HTTPTest(TestCase):
         raw_fact = self._check_and_extract(returned_facts[0])
         self.assertEqual(FACTS[0], raw_fact)
 
+    def test_retrieve_facts_after_id(self):
+        topic = self._new_unique_topic()
+        map(lambda f: self._publish_fact(topic, f), FACTS)
+        sleep(0.1)
+        response = self._visit(verb='GET', path='topics/%s/facts' % (topic,),
+                               exp_status=200,
+                               exp_content_type=JSON_CONTENT_TYPE)
+        all_ids = self._extract_fact_ids(response)
+        first_id = min(all_ids)
+
+        path = 'topics/%s/facts?after_id=%d' % (topic, first_id)
+        response = self._visit(verb='GET', path=path, exp_status=200,
+                               exp_content_type=JSON_CONTENT_TYPE)
+        returned_ids = self._extract_fact_ids(response)
+        self.assertEqual(all_ids[1:], returned_ids)
+        
+    def _extract_fact_ids(self, response):
+        return map(lambda f: f['combo_id'], loads(response.read()))
+
     def test_retrieve_topics(self):
         topic1 = self._new_unique_topic()
         self._publish_fact(topic1, FACTS[0])
