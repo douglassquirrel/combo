@@ -64,6 +64,17 @@ class FactspaceTest(TestCase):
         raw_facts = map(self._check_and_extract, factspace.after_id(TOPIC, 1))
         self.assertEqual(FACTS[-2:], raw_facts)
 
+    def test_wildcard_topic(self):
+        factspace = Factspace(PG_URL)
+        self._add_facts('wild.card', FACTS[0:1])
+        self._add_facts('wild.thing', FACTS[1:])
+        raw_facts = map(self._check_and_extract,
+                        factspace.last_n('wild.#', 10))
+        self.assertEqual(FACTS, raw_facts)
+        raw_facts = map(self._check_and_extract,
+                        factspace.after_id('wild.#', 0))
+        self.assertEqual(FACTS, raw_facts)
+
     def test_list_topics(self):
         factspace = Factspace(PG_URL)
         self._add_facts('news', FACTS)

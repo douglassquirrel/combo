@@ -8,12 +8,12 @@ GET_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
 GET_LAST_N_FACTS_SQL = '''
     SELECT id, ts, topic, content
     FROM (SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, topic, content
-          FROM facts WHERE topic = %%s ORDER BY id DESC LIMIT %s) t
+          FROM facts WHERE topic LIKE %%s ORDER BY id DESC LIMIT %s) t
     ORDER BY id ASC
 '''
 GET_AFTER_ID_FACTS_SQL = '''
     SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, topic, content
-          FROM facts WHERE topic = %s AND id > %s ORDER BY id ASC
+          FROM facts WHERE topic LIKE %s AND id > %s ORDER BY id ASC
 '''
 INSERT_FACT_SQL = '''
     INSERT INTO facts (topic, ts, content) VALUES (%s, now(), %s);
@@ -31,11 +31,13 @@ class Factspace:
         return map(lambda x: x[0], result)
 
     def last_n(self, topic, number):
+        topic = self._translate_wildcards(topic)
         result = run_sql(self.conn, GET_LAST_N_FACTS_SQL % (number,),
                          results=True, parameters=[topic])
         return map(self._format_fact, result)
 
     def after_id(self, topic, id):
+        topic = self._translate_wildcards(topic)
         result = run_sql(self.conn, GET_AFTER_ID_FACTS_SQL,
                          results=True, parameters=[topic, id])
         return map(self._format_fact, result)
@@ -50,6 +52,9 @@ class Factspace:
         fact['combo_timestamp'] = returned_fact[1]
         fact['combo_topic'] = returned_fact[2]
         return fact
+
+    def _translate_wildcards(self, s):
+        return s.replace('#', '%')
 
 class MissingTableError(Exception):
     pass
