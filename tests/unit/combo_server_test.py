@@ -8,7 +8,7 @@ from web import combo_server
 TEST_HOME_PAGE = 'test home page'
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
 FACTS_URL_PATTERN = 'http://foo.com/topics/%s/facts'
-SUB_URL_PATTERN = 'http://foo.com/topics/%s/subscription'
+SUB_URL_PATTERN = 'http://foo.com/topics/%s/subscriptions'
 def make_topic_response_element(topic):
     return {'topic_name': topic,
             'facts_url': FACTS_URL_PATTERN % (topic,),
@@ -16,7 +16,7 @@ def make_topic_response_element(topic):
 TEST_TOPICS_RESPONSE = map(make_topic_response_element, TEST_TOPICS)
 TEST_TOPIC = 'story.creation'
 TEST_SUB_ID = '%s.subscription' % (TEST_TOPIC,)
-RETR_URL_PATTERN = 'http://foo.com/topics/%s/facts?subscription_id=%s'
+RETR_URL_PATTERN = 'http://foo.com/topics/%s/subscriptions/%s/next'
 TEST_SUB_RESPONSE = {'retrieval_url': RETR_URL_PATTERN % (TEST_TOPIC,
                                                           TEST_SUB_ID),
                      'subscription_id': TEST_SUB_ID}
@@ -72,7 +72,7 @@ class ComboServerTest(TestCase):
         self._mock_factspace()
         pubsub = self._mock_pubsub()
         pubsub.fetch_from_sub = Mock(return_value=TEST_FACTS[0])
-        url = '/topics/%s/facts?subscription_id=%s' % (TEST_TOPIC, TEST_SUB_ID)
+        url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         self._assertResponseJSON(self.client.get(url), 200, TEST_FACTS[0])
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID)
 
@@ -80,14 +80,14 @@ class ComboServerTest(TestCase):
         self._mock_factspace()
         pubsub = self._mock_pubsub()
         pubsub.fetch_from_sub = Mock(return_value=None)
-        url = '/topics/%s/facts?subscription_id=%s' % (TEST_TOPIC, TEST_SUB_ID)
+        url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         self._assertResponsePlain(self.client.get(url), 204, 'text/plain', '')
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID)
 
     def test_subscription(self):
         pubsub = self._mock_pubsub()
         pubsub.subscribe = Mock(return_value='%s.subscription' % (TEST_TOPIC,))
-        response = self.client.post('/topics/%s/subscription' % (TEST_TOPIC,))
+        response = self.client.post('/topics/%s/subscriptions' % (TEST_TOPIC,))
         self._assertResponseJSON(response, 200, TEST_SUB_RESPONSE)
         pubsub.subscribe.assert_called_once_with(topic=TEST_TOPIC)
 

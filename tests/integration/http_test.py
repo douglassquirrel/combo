@@ -60,13 +60,13 @@ class HTTPTest(TestCase):
     def test_subscribe_and_retrieve(self):
         topic = self._new_unique_topic()
         response = self._visit(verb='POST',
-                               path='topics/%s/subscription' % (topic,),
+                               path='topics/%s/subscriptions' % (topic,),
                                exp_status=200,
                                exp_content_type=JSON_CONTENT_TYPE)
         sub_id = loads(response.read())['subscription_id']
 
         self._publish_fact(topic, FACTS[0])
-        path = '/topics/%s/facts?subscription_id=%s' % (topic, sub_id)
+        path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
         response = self._visit(verb='GET', path=path, exp_status=200,
                                exp_content_type=JSON_CONTENT_TYPE)
         self.assertEqual(FACTS[0], loads(response.read()))
@@ -74,16 +74,13 @@ class HTTPTest(TestCase):
     def test_subscribe_and_timeout(self):
         topic = self._new_unique_topic()
         response = self._visit(verb='POST',
-                               path='topics/%s/subscription' % (topic,),
+                               path='topics/%s/subscriptions' % (topic,),
                                exp_status=200,
                                exp_content_type=JSON_CONTENT_TYPE)
         sub_id = loads(response.read())['subscription_id']
-        path = '/topics/%s/facts?subscription_id=%s' % (topic, sub_id)
+        path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
         response = self._visit(verb='GET', path=path, exp_status=204,
                                exp_content_type=TEXT_CONTENT_TYPE)
-
-    def _extract_fact_ids(self, response):
-        return map(lambda f: f['combo_id'], loads(response.read()))
 
     def test_retrieve_topics(self):
         topic1 = self._new_unique_topic()
@@ -96,6 +93,9 @@ class HTTPTest(TestCase):
         topics = map(lambda x: x['topic_name'], loads(response.read()))
         self.assertIn(topic1, topics)
         self.assertIn(topic2, topics)
+
+    def _extract_fact_ids(self, response):
+        return map(lambda f: f['combo_id'], loads(response.read()))
 
     def _visit(self, verb, path, exp_status, exp_content_type, content=None):
         if content is not None:

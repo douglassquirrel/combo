@@ -17,7 +17,7 @@ def topics():
     topics = app.config['FACTSPACE'].list_topics()
     return _respond_json(map(_format_topic, topics))
 
-@app.route('/topics/<topic>/subscription', methods=['POST'])
+@app.route('/topics/<topic>/subscriptions', methods=['POST'])
 def subscription(topic):
     subscription_id = app.config['PUBSUB'].subscribe(topic=topic)
     return _respond_json(_format_subscription(topic, subscription_id))
@@ -25,19 +25,20 @@ def subscription(topic):
 @app.route('/topics/<topic>/facts', methods=['GET'])
 def get_facts(topic):
     factspace = app.config['FACTSPACE']
-    pubsub = app.config['PUBSUB']
     after_id = request.args.get('after_id')
-    sub_id = request.args.get('subscription_id')
     if after_id is not None:
         return _respond_json(factspace.after_id(topic, int(after_id)))
-    elif sub_id is not None:
-        result = pubsub.fetch_from_sub(topic, sub_id)
-        if result is not None:
-            return _respond_json(result)
-        else:
-            return _respond('', 'text/plain', 204)
     else:
         return _respond_json(factspace.last_n(topic, 10))
+
+@app.route('/topics/<topic>/subscriptions/<sub_id>/next', methods=['GET'])
+def get_next_fact_from_sub(topic, sub_id):
+    pubsub = app.config['PUBSUB']
+    result = pubsub.fetch_from_sub(topic, sub_id)
+    if result is not None:
+        return _respond_json(result)
+    else:
+        return _respond('', 'text/plain', 204)
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
@@ -51,8 +52,7 @@ def _format_topic(topic):
             'facts_url': _ext_url_for('get_facts', topic)}
 
 def _format_subscription(topic, sub_id):
-    RETRIEVAL_URL = _ext_url_for('get_facts', topic) \
-                      + '?subscription_id=%s' % (sub_id,)
+    RETRIEVAL_URL = _ext_url_for('get_next_fact_from_sub', topic, sub_id)
     return {'retrieval_url': RETRIEVAL_URL, 'subscription_id': sub_id}
 
 def _respond(data, mimetype, status=200):
@@ -64,8 +64,8 @@ def _respond(data, mimetype, status=200):
 def _respond_json(data):
     return _respond(dumps(data), mimetype='application/json')
 
-def _ext_url_for(function, topic):
-    return url_for(function, topic=topic, _external=True)
+def _ext_url_for(function, topic, sub_id=None):
+    return url_for(function, topic=topic, sub_id=sub_id, _external=True)
 
 default_config_file = pathjoin(dirname(__file__), 'settings.py')
 config_file = environ.get('COMBO_SETTINGS_FILE', default_config_file)
