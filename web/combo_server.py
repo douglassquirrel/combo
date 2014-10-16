@@ -33,8 +33,9 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/subscriptions/<sub_id>/next', methods=['GET'])
 def get_next_fact_from_sub(topic, sub_id):
+    timeout = int(request.headers.get('Patience', '10'))
     pubsub = app.config['PUBSUB']
-    result = pubsub.fetch_from_sub(topic, sub_id)
+    result = pubsub.fetch_from_sub(topic, sub_id, timeout)
     if result is not None:
         return _respond_json(result)
     else:

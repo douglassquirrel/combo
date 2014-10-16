@@ -3,7 +3,7 @@
 from httplib import HTTPConnection
 from json import dumps, loads
 from sys import argv
-from time import sleep
+from time import sleep, time as now
 from unittest import main, TestCase
 from uuid import uuid1
 
@@ -79,8 +79,16 @@ class HTTPTest(TestCase):
                                exp_content_type=JSON_CONTENT_TYPE)
         sub_id = loads(response.read())['subscription_id']
         path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
-        response = self._visit(verb='GET', path=path, exp_status=204,
+
+        start = now()
+        response = self._visit(verb='GET', path=path, 
+                               headers={'Patience': '1'},
+                               exp_status=204,
                                exp_content_type=TEXT_CONTENT_TYPE)
+        response.read()
+        duration = now() - start
+        self.assertTrue(duration < 2,
+                        'Should wait only as specified in Patience header')
 
     def test_retrieve_topics(self):
         topic1 = self._new_unique_topic()
@@ -97,11 +105,10 @@ class HTTPTest(TestCase):
     def _extract_fact_ids(self, response):
         return map(lambda f: f['combo_id'], loads(response.read()))
 
-    def _visit(self, verb, path, exp_status, exp_content_type, content=None):
-        if content is not None:
-            self.conn.request(verb, path, content)
-        else:
-            self.conn.request(verb, path)
+    def _visit(self, verb, path,
+               exp_status, exp_content_type,
+               headers={}, content=''):
+        self.conn.request(verb, path, content, headers)
         response = self.conn.getresponse()
         self.assertEqual(exp_status, response.status)
         actual_content_type = response.getheader('Content-Type')

@@ -74,15 +74,25 @@ class ComboServerTest(TestCase):
         pubsub.fetch_from_sub = Mock(return_value=TEST_FACTS[0])
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         self._assertResponseJSON(self.client.get(url), 200, TEST_FACTS[0])
-        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID)
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
 
-    def test_get_fact_from_subscription_and_timeout(self):
+    def test_get_fact_from_subscription_with_default_timeout(self):
         self._mock_factspace()
         pubsub = self._mock_pubsub()
         pubsub.fetch_from_sub = Mock(return_value=None)
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         self._assertResponsePlain(self.client.get(url), 204, 'text/plain', '')
-        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID)
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
+
+    def test_get_fact_from_subscription_with_specified_timeout(self):
+        self._mock_factspace()
+        pubsub = self._mock_pubsub()
+        pubsub.fetch_from_sub = Mock(return_value=None)
+        url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
+        response = self.client.get(url, headers={'Patience': '5'})
+        self._assertResponsePlain(response,
+                                  204, 'text/plain', '')
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 5)
 
     def test_subscription(self):
         pubsub = self._mock_pubsub()

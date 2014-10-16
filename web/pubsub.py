@@ -20,8 +20,9 @@ class PubSub:
                                 routing_key=topic)
         return queue
 
-    def fetch_from_sub(self, topic, queue, spin=spin):
-        return self._safe_loads(spin(lambda: self._check_queue(queue), 10))
+    def fetch_from_sub(self, topic, queue, timeout, spin=spin):
+        result = spin(lambda: self._check_queue(queue), timeout)
+        return self._safe_loads(result)
 
     def consume(self, topic, consumer):
         def rabbit_consumer(channel, method, properties, body):

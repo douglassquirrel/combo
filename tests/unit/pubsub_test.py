@@ -53,7 +53,8 @@ class PubSubTest(TestCase):
         self.channel.basic_publish(exchange=EXCHANGE,
                                    routing_key='fetch_from_sub_test_topic',
                                    body=dumps(FACT))
-        fact = self.pubsub.fetch_from_sub('fetch_from_sub_test_topic', queue)
+        fact = self.pubsub.fetch_from_sub('fetch_from_sub_test_topic',
+                                          queue, 10)
         self.assertEqual(fact, FACT)
 
     def test_fetch_from_sub_timeout(self):
@@ -62,9 +63,9 @@ class PubSubTest(TestCase):
                                 routing_key='timeout_test_topic')
         spin = Mock(return_value=None)
         result = self.pubsub.fetch_from_sub('timeout_test_topic', queue,
-                                            spin=spin)
+                                            5, spin=spin)
         self.assertIsNone(result)
-        self.assertEqual(10, spin.call_args[0][1])
+        self.assertEqual(5, spin.call_args[0][1])
 
     def test_consume(self):
         queue = PythonQueue()
