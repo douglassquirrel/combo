@@ -6,13 +6,13 @@ SELECT COUNT(1) FROM information_schema.tables WHERE table_name = 'facts';
 '''
 GET_TOPICS_SQL = 'SELECT DISTINCT topic FROM facts'
 GET_LAST_N_FACTS_SQL = '''
-    SELECT id, ts, content
-    FROM (SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, content
+    SELECT id, ts, topic, content
+    FROM (SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, topic, content
           FROM facts WHERE topic = %%s ORDER BY id DESC LIMIT %s) t
     ORDER BY id ASC
 '''
 GET_AFTER_ID_FACTS_SQL = '''
-    SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, content
+    SELECT id, ROUND(EXTRACT(epoch FROM ts))::int AS ts, topic, content
           FROM facts WHERE topic = %s AND id > %s ORDER BY id ASC
 '''
 INSERT_FACT_SQL = '''
@@ -45,9 +45,10 @@ class Factspace:
                 parameters=[topic, dumps(fact)])
 
     def _format_fact(self, returned_fact):
-        fact = dict(returned_fact[2])
+        fact = dict(returned_fact[3])
         fact['combo_id'] = returned_fact[0]
         fact['combo_timestamp'] = returned_fact[1]
+        fact['combo_topic'] = returned_fact[2]
         return fact
 
 class MissingTableError(Exception):

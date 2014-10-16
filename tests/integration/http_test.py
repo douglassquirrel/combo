@@ -117,11 +117,10 @@ class HTTPTest(TestCase):
         response.read()
 
     def _check_and_extract(self, returned_fact):
-        self.assertIn('combo_id', returned_fact)
-        self.assertIn('combo_timestamp', returned_fact)
         raw_fact = dict(returned_fact)
-        del raw_fact['combo_id']
-        del raw_fact['combo_timestamp']
+        for key in ['combo_id', 'combo_timestamp', 'combo_topic']:
+            self.assertIn(key, returned_fact)
+            del raw_fact[key]
         return raw_fact
 
     def _new_unique_topic(self):
