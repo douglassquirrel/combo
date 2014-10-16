@@ -52,6 +52,12 @@ class ComboServerTest(TestCase):
         pubsub.publish.assert_called_once_with(topic=TEST_TOPIC,
                                                fact=TEST_FACTS[0])
 
+    def test_publish_invalid_fact(self):
+        pubsub = self._mock_pubsub()
+        response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
+                                    data='invalid_fact')
+        self._assertResponsePlain(response, 400, 'text/plain', '')
+
     def test_get_last_10_facts(self):
         factspace = self._mock_factspace()
         self._mock_pubsub()

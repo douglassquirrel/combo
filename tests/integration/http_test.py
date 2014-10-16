@@ -29,9 +29,16 @@ class HTTPTest(TestCase):
                     exp_status=202, exp_content_type=TEXT_CONTENT_TYPE,
                     content=dumps(FACTS[0]))
 
+    def test_publish_invalid_fact(self):
+        topic = self._new_unique_topic()
+        self._visit(verb='POST', path='topics/%s/facts' % (topic,),
+                    exp_status=400, exp_content_type=TEXT_CONTENT_TYPE,
+                    content='invalid fact')
+
     def test_retrieve_fact(self):
         topic = self._new_unique_topic()
         self._publish_fact(topic, FACTS[0])
+        return
         sleep(0.1)
         response = self._visit(verb='GET', path='topics/%s/facts' % (topic,),
                                exp_status=200,
@@ -78,8 +85,8 @@ class HTTPTest(TestCase):
                                exp_status=200,
                                exp_content_type=JSON_CONTENT_TYPE)
         sub_id = loads(response.read())['subscription_id']
-        path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
 
+        path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
         start = now()
         response = self._visit(verb='GET', path=path, 
                                headers={'Patience': '1'},
@@ -89,6 +96,14 @@ class HTTPTest(TestCase):
         duration = now() - start
         self.assertTrue(duration < 2,
                         'Should wait only as specified in Patience header')
+
+    def xtest_nonexistent_subscription_id(self):
+        topic = self._new_unique_topic()
+        path = '/topics/%s/subscriptions/nonexistent/next' % (topic,)
+        response = self._visit(verb='GET', path=path, 
+                               exp_status=404,
+                               exp_content_type=TEXT_CONTENT_TYPE)
+        response.read()
 
     def test_retrieve_topics(self):
         topic1 = self._new_unique_topic()

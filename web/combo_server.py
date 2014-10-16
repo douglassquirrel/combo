@@ -43,7 +43,9 @@ def get_next_fact_from_sub(topic, sub_id):
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):
-    fact = request.get_json(force=True)
+    fact = request.get_json(force=True, silent=True)
+    if fact is None:
+        return _respond('', 'text/plain', status=400)
     app.config['PUBSUB'].publish(topic=topic, fact=fact)
     return _respond('', 'text/plain', status=202)
 
