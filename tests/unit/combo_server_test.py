@@ -86,6 +86,17 @@ class ComboServerTest(TestCase):
                                  self.client.get(url), 200, TEST_FACTS)
         factspace.after_id.assert_called_with(TEST_TOPIC, TEST_ID)
 
+    def test_get_facts_with_bad_after_id(self):
+        url = '/topics/%s/facts?after_id=3.14' % (TEST_TOPIC,)
+        self._assertResponsePlain('Should reject non-integer after_id',
+                                 self.client.get(url), 400, 'text/plain', '')
+        url = '/topics/%s/facts?after_id=invalid' % (TEST_TOPIC,)
+        self._assertResponsePlain('Should reject non-integer after_id',
+                                 self.client.get(url), 400, 'text/plain', '')
+        url = '/topics/%s/facts?after_id=' % (TEST_TOPIC,)
+        self._assertResponsePlain('Should reject empty after_id',
+                                 self.client.get(url), 400, 'text/plain', '')
+
     def test_get_fact_from_subscription(self):
         self._mock_factspace()
         pubsub = self._mock_pubsub()

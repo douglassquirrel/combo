@@ -26,10 +26,12 @@ def subscription(topic):
 def get_facts(topic):
     factspace = app.config['FACTSPACE']
     after_id = request.args.get('after_id')
-    if after_id is not None:
+    if after_id is None:
+        return _respond_json(factspace.last_n(topic, 10))
+    elif _is_valid_int_string(after_id):
         return _respond_json(factspace.after_id(topic, int(after_id)))
     else:
-        return _respond_json(factspace.last_n(topic, 10))
+        return _bad_request()
 
 @app.route('/topics/<topic>/subscriptions/<sub_id>/next', methods=['GET'])
 def get_next_fact_from_sub(topic, sub_id):
@@ -45,7 +47,7 @@ def get_next_fact_from_sub(topic, sub_id):
 def publish_fact(topic):
     fact = request.get_json(force=True, silent=True)
     if not isinstance(fact, dict):
-        return _respond('', 'text/plain', status=400)
+        return _bad_request()
     app.config['PUBSUB'].publish(topic=topic, fact=fact)
     return _respond('', 'text/plain', status=202)
 
@@ -66,6 +68,16 @@ def _respond(data, mimetype, status=200):
 
 def _respond_json(data):
     return _respond(dumps(data), mimetype='application/json')
+
+def _bad_request():
+    return _respond('', 'text/plain', status=400)
+
+def _is_valid_int_string(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 def _ext_url_for(function, topic, sub_id=None):
     return url_for(function, topic=topic, sub_id=sub_id, _external=True)
