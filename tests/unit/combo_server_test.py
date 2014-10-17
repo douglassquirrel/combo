@@ -34,36 +34,47 @@ class ComboServerTest(TestCase):
 
     def test_home(self):
         self.app.config['HOME_HTML'] = TEST_HOME_PAGE
-        self._assertResponsePlain(self.client.get('/'),
+        self._assertResponsePlain('Should respond to /', self.client.get('/'),
                                   200, 'text/html', TEST_HOME_PAGE)
 
     def test_topics(self):
         factspace = self._mock_factspace()
         factspace.list_topics = Mock(return_value=TEST_TOPICS)
-        self._assertResponseJSON(self.client.get('/topics'),
-                                200, TEST_TOPICS_RESPONSE)
+        self._assertResponseJSON('Should list topics', 
+                                 self.client.get('/topics'),
+                                 200, TEST_TOPICS_RESPONSE)
         factspace.list_topics.assert_called_with()
 
     def test_publish(self):
         pubsub = self._mock_pubsub()
         response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
                                     data=dumps(TEST_FACTS[0]))
-        self._assertResponsePlain(response, 202, 'text/plain', '')
+        self._assertResponsePlain('Should publish fact',
+                                  response, 202, 'text/plain', '')
         pubsub.publish.assert_called_once_with(topic=TEST_TOPIC,
                                                fact=TEST_FACTS[0])
 
-    def test_publish_invalid_fact(self):
-        pubsub = self._mock_pubsub()
+    def test_publish_invalid_facts(self):
         response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
                                     data='invalid_fact')
-        self._assertResponsePlain(response, 400, 'text/plain', '')
+        self._assertResponsePlain('Should reject non-JSON fact',
+                                  response, 400, 'text/plain', '')
+        response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
+                                    data='["not a dict"]')
+        self._assertResponsePlain('Should reject non-dictionary',
+                                  response, 400, 'text/plain', '')
+        response = self.client.post('/topics/%s/facts' % (TEST_TOPIC,),
+                                    data='')
+        self._assertResponsePlain('Should reject empty fact',
+                                  response, 400, 'text/plain', '')
 
     def test_get_last_10_facts(self):
         factspace = self._mock_factspace()
         self._mock_pubsub()
         factspace.last_n = Mock(return_value=TEST_FACTS)
         response = self.client.get('/topics/%s/facts' % (TEST_TOPIC,))
-        self._assertResponseJSON(response, 200, TEST_FACTS)
+        self._assertResponseJSON('Should fetch last 10 facts',
+                                 response, 200, TEST_FACTS)
         factspace.last_n.assert_called_with(TEST_TOPIC, 10)
 
     def test_get_facts_after_id(self):
@@ -71,7 +82,8 @@ class ComboServerTest(TestCase):
         self._mock_pubsub()
         factspace.after_id = Mock(return_value=TEST_FACTS)
         url = '/topics/%s/facts?after_id=%d' % (TEST_TOPIC, TEST_ID)
-        self._assertResponseJSON(self.client.get(url), 200, TEST_FACTS)
+        self._assertResponseJSON('Should get facts after id',
+                                 self.client.get(url), 200, TEST_FACTS)
         factspace.after_id.assert_called_with(TEST_TOPIC, TEST_ID)
 
     def test_get_fact_from_subscription(self):
@@ -79,7 +91,8 @@ class ComboServerTest(TestCase):
         pubsub = self._mock_pubsub()
         pubsub.fetch_from_sub = Mock(return_value=TEST_FACTS[0])
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
-        self._assertResponseJSON(self.client.get(url), 200, TEST_FACTS[0])
+        self._assertResponseJSON('Should get latest fact',
+                                 self.client.get(url), 200, TEST_FACTS[0])
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
 
     def test_get_fact_from_subscription_with_default_timeout(self):
@@ -87,7 +100,8 @@ class ComboServerTest(TestCase):
         pubsub = self._mock_pubsub()
         pubsub.fetch_from_sub = Mock(return_value=None)
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
-        self._assertResponsePlain(self.client.get(url), 204, 'text/plain', '')
+        self._assertResponsePlain('Should time out and return 204',
+                                  self.client.get(url), 204, 'text/plain', '')
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
 
     def test_get_fact_from_subscription_with_specified_timeout(self):
@@ -96,15 +110,16 @@ class ComboServerTest(TestCase):
         pubsub.fetch_from_sub = Mock(return_value=None)
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         response = self.client.get(url, headers={'Patience': '5'})
-        self._assertResponsePlain(response,
-                                  204, 'text/plain', '')
+        self._assertResponsePlain('Should time out and return 204',
+                                  response, 204, 'text/plain', '')
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 5)
 
     def test_subscription(self):
         pubsub = self._mock_pubsub()
         pubsub.subscribe = Mock(return_value='%s.subscription' % (TEST_TOPIC,))
         response = self.client.post('/topics/%s/subscriptions' % (TEST_TOPIC,))
-        self._assertResponseJSON(response, 200, TEST_SUB_RESPONSE)
+        self._assertResponseJSON('Should return subscription data',
+                                 response, 200, TEST_SUB_RESPONSE)
         pubsub.subscribe.assert_called_once_with(topic=TEST_TOPIC)
 
     def _mock_factspace(self):
@@ -115,13 +130,13 @@ class ComboServerTest(TestCase):
         self.app.config['PUBSUB'] = Mock()
         return self.app.config['PUBSUB']
 
-    def _assertResponsePlain(self, response, status_code, mimetype, data):
-        self.assertEqual(status_code, response.status_code)
+    def _assertResponsePlain(self, msg, response, status_code, mimetype, data):
+        self.assertEqual(status_code, response.status_code, msg=msg)
         self.assertEqual('%s; charset=utf-8' % (mimetype,),
-                         response.content_type)
-        self.assertEqual(data, response.data)
+                         response.content_type, msg=msg)
+        self.assertEqual(data, response.data, msg=msg)
 
-    def _assertResponseJSON(self, response, status_code, data):
-        self.assertEqual(status_code, response.status_code)
-        self.assertEqual('application/json', response.content_type)
-        self.assertEqual(data, loads(response.data))
+    def _assertResponseJSON(self, msg, response, status_code, data):
+        self.assertEqual(status_code, response.status_code, msg=msg)
+        self.assertEqual('application/json', response.content_type, msg=msg)
+        self.assertEqual(data, loads(response.data), msg=msg)
