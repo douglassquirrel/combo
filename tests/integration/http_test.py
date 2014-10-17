@@ -98,7 +98,7 @@ class HTTPTest(TestCase):
                         'Should wait only as specified in Patience header')
 
     def test_nonexistent_subscription_id(self):
-        fail('not tested yet')
+        #self.fail('not tested yet')
         topic = self._new_unique_topic()
         path = '/topics/%s/subscriptions/nonexistent/next' % (topic,)
         response = self._visit(verb='GET', path=path, 
