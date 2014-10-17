@@ -3,6 +3,7 @@
 from httplib import HTTPConnection
 from json import dumps, loads
 from sys import argv
+from threading import Thread
 from time import sleep, time as now
 from unittest import main, TestCase
 from uuid import uuid1
@@ -16,8 +17,8 @@ JSON_CONTENT_TYPE = 'application/json'
 
 class HTTPTest(TestCase):
     def setUp(self):
-        url, port = argv[1], int(argv[2])
-        self.conn = HTTPConnection(url, port)
+        self.url, self.port = argv[1], int(argv[2])
+        self.conn = HTTPConnection(self.url, self.port)
 
     def test_home(self):
         self._visit(verb='GET', path='/',
@@ -98,7 +99,6 @@ class HTTPTest(TestCase):
                         'Should wait only as specified in Patience header')
 
     def test_nonexistent_subscription_id(self):
-        #self.fail('not tested yet')
         topic = self._new_unique_topic()
         path = '/topics/%s/subscriptions/nonexistent/next' % (topic,)
         response = self._visit(verb='GET', path=path, 
@@ -117,6 +117,31 @@ class HTTPTest(TestCase):
         topics = map(lambda x: x['topic_name'], loads(response.read()))
         self.assertIn(topic1, topics)
         self.assertIn(topic2, topics)
+
+    def test_simultaneous_requests(self):
+        topic = self._new_unique_topic()
+        response = self._visit(verb='POST',
+                               path='topics/%s/subscriptions' % (topic,),
+                               exp_status=200,
+                               exp_content_type=JSON_CONTENT_TYPE)
+        sub_id = loads(response.read())['subscription_id']
+
+        thread = Thread(target=self._wait_on_sub, args=(topic, sub_id))
+        thread.daemon = True
+        thread.start()
+        sleep(0.5)
+        conn = HTTPConnection(self.url, self.port)
+        conn.request('GET', 'topics', '', {})
+        conn.getresponse().read()
+        self.assertTrue(thread.is_alive(),
+                        msg='Should run two queries at once')
+        thread.join()
+
+    def _wait_on_sub(self, topic, sub_id):
+        conn = HTTPConnection(self.url, self.port)
+        path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
+        response = conn.request('GET', path, '', {'Patience': '2'})
+        conn.getresponse().read()
 
     def _extract_fact_ids(self, response):
         return map(lambda f: f['combo_id'], loads(response.read()))
