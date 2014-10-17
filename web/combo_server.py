@@ -5,6 +5,8 @@ from json import dumps, loads
 from logging import INFO, StreamHandler
 from os import environ
 from os.path import dirname, join as pathjoin
+from web.pubsub import PubSubError
+from traceback import print_exc
 
 app = Flask('combo')
 
@@ -35,18 +37,22 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/subscriptions/<sub_id>/next', methods=['GET'])
 def get_next_fact_from_sub(topic, sub_id):
-    patience_string = request.headers.get('Patience', '10')
-    if patience_string == '' or not _is_valid_int_string(patience_string):
-        return _bad_request()
-    timeout = int(patience_string)
-    if timeout <= 0:
-        return _bad_request()
-    pubsub = app.config['PUBSUB']
-    result = pubsub.fetch_from_sub(topic, sub_id, timeout)
-    if result is not None:
-        return _respond_json(result)
-    else:
-        return _respond('', 'text/plain', 204)
+    try:
+        patience_string = request.headers.get('Patience', '10')
+        if patience_string == '' or not _is_valid_int_string(patience_string):
+            return _bad_request()
+        timeout = int(patience_string)
+        if timeout <= 0:
+            return _bad_request()
+        pubsub = app.config['PUBSUB']
+        result = pubsub.fetch_from_sub(topic, sub_id, timeout)
+        if result is not None:
+            return _respond_json(result)
+        else:
+            return _respond('', 'text/plain', 204)
+    except PubSubError as e:
+        print_exc(file=app.config['ERROR_OUT'])
+        return _respond('', 'text/plain', 404)
 
 @app.route('/topics/<topic>/facts', methods=['POST'])
 def publish_fact(topic):

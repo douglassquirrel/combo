@@ -3,7 +3,9 @@
 from json import loads, dumps
 from mock import Mock
 from unittest import TestCase
-from web import combo_server
+from web.combo_server import app
+from web.pubsub import PubSubError
+from sys import stderr
 
 TEST_HOME_PAGE = 'test home page'
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
@@ -27,9 +29,10 @@ TEST_ID = 123
 
 class ComboServerTest(TestCase):
     def setUp(self):
-        self.app = combo_server.app
+        self.app = app
         self.app.testing = True
         self.app.config['SERVER_NAME'] = 'foo.com'
+        self.app.config['ERROR_OUT'] = stderr
         self.client = self.app.test_client()
 
     def test_home(self):
@@ -106,6 +109,15 @@ class ComboServerTest(TestCase):
                                  self.client.get(url), 200, TEST_FACTS[0])
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
 
+    def test_get_fact_from_nonexistent_subscription(self):
+        self.app.config['ERROR_OUT'] = Devnull()
+        self._mock_factspace()
+        pubsub = self._mock_pubsub()
+        pubsub.fetch_from_sub = Mock(side_effect=PubSubError)
+        url = '/topics/%s/subscriptions/invalid/next' % (TEST_TOPIC,)
+        self._assertResponsePlain('Should give error for invalid sub id ',
+                                 self.client.get(url), 404, 'text/plain', '')
+
     def test_get_fact_from_subscription_with_default_timeout(self):
         self._mock_factspace()
         pubsub = self._mock_pubsub()
@@ -143,7 +155,6 @@ class ComboServerTest(TestCase):
         self._assertResponsePlain('Should reject patience value of zero',
                                   response, 400, 'text/plain', '')
 
-
     def test_subscription(self):
         pubsub = self._mock_pubsub()
         pubsub.subscribe = Mock(return_value='%s.subscription' % (TEST_TOPIC,))
@@ -170,3 +181,7 @@ class ComboServerTest(TestCase):
         self.assertEqual(status_code, response.status_code, msg=msg)
         self.assertEqual('application/json', response.content_type, msg=msg)
         self.assertEqual(data, loads(response.data), msg=msg)
+
+class Devnull(object):
+    def write(self, _):
+        pass

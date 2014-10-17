@@ -1,7 +1,11 @@
 from json import dumps, loads
 from pika import BlockingConnection, URLParameters
+from pika.exceptions import AMQPError
 from spinner import spin
 from sys import stderr
+
+class PubSubError(Exception):
+    pass
 
 class PubSub:
     def __init__(self, url, exchange):
@@ -36,7 +40,10 @@ class PubSub:
         self.channel.start_consuming()
 
     def _check_queue(self, queue):
-        return self.channel.basic_get(queue=queue, no_ack=True)[2]
+        try:
+            return self.channel.basic_get(queue=queue, no_ack=True)[2]
+        except AMQPError as e:
+            raise PubSubError(e)
 
     def _safe_loads(self, value):
         if value is None:

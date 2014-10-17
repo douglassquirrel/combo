@@ -11,7 +11,7 @@ from threading import Thread
 from traceback import print_exc
 from unittest import TestCase
 from web.spinner import spin
-from web.pubsub import PubSub
+from web.pubsub import PubSub, PubSubError
 
 getLogger('pika').setLevel(WARNING)
 
@@ -66,6 +66,14 @@ class PubSubTest(TestCase):
                                             5, spin=spin)
         self.assertIsNone(result)
         self.assertEqual(5, spin.call_args[0][1])
+
+    def test_fetch_from_sub_with_nonexistent_sub_id(self):
+        try:
+            fact = self.pubsub.fetch_from_sub('fetch_from_sub_bad_id_test',
+                                          'does_not_exist', 1)
+            fail('Should raise PubSubError when sub id does not exist')
+        except PubSubError:
+            pass # Expected
 
     def test_consume(self):
         queue = PythonQueue()
