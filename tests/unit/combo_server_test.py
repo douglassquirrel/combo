@@ -125,6 +125,25 @@ class ComboServerTest(TestCase):
                                   response, 204, 'text/plain', '')
         pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 5)
 
+    def test_get_fact_from_sub_bad_header(self):
+        url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
+        response = self.client.get(url, headers={'Patience': 'foo'})
+        self._assertResponsePlain('Should reject non-integer patience value',
+                                  response, 400, 'text/plain', '')
+        response = self.client.get(url, headers={'Patience': '3.14'})
+        self._assertResponsePlain('Should reject non-integer patience value',
+                                  response, 400, 'text/plain', '')
+        response = self.client.get(url, headers={'Patience': ''})
+        self._assertResponsePlain('Should reject empty patience value',
+                                  response, 400, 'text/plain', '')
+        response = self.client.get(url, headers={'Patience': '-1'})
+        self._assertResponsePlain('Should reject negative patience value',
+                                  response, 400, 'text/plain', '')
+        response = self.client.get(url, headers={'Patience': '0'})
+        self._assertResponsePlain('Should reject patience value of zero',
+                                  response, 400, 'text/plain', '')
+
+
     def test_subscription(self):
         pubsub = self._mock_pubsub()
         pubsub.subscribe = Mock(return_value='%s.subscription' % (TEST_TOPIC,))

@@ -35,7 +35,12 @@ def get_facts(topic):
 
 @app.route('/topics/<topic>/subscriptions/<sub_id>/next', methods=['GET'])
 def get_next_fact_from_sub(topic, sub_id):
-    timeout = int(request.headers.get('Patience', '10'))
+    patience_string = request.headers.get('Patience', '10')
+    if patience_string == '' or not _is_valid_int_string(patience_string):
+        return _bad_request()
+    timeout = int(patience_string)
+    if timeout <= 0:
+        return _bad_request()
     pubsub = app.config['PUBSUB']
     result = pubsub.fetch_from_sub(topic, sub_id, timeout)
     if result is not None:
