@@ -14,20 +14,34 @@
     <a href="http://docs.combo.apiary.io">http://docs.combo.apiary.io</a>
     for further details.
   </p>
-
+  <h3>Chat example</h3>
+  <p>
+    Publish facts of the form <code>{"who": "joe", "says": "hello"}</code>
+    to the topic "chat" to see them below.
+  </p> 
+  <div id="status" style="font-size:small"></div>
+  <div id="chat" style="max-height:100px;overflow:auto;"></div>
 <script type='text/javascript'>
   poll = function(retrieval_url) {
+    var status_div = document.getElementById('status');
+    status_div.innerHTML = 'Starting poll';
     console.log('Starting poll for ' + retrieval_url);
     var poll_xhr = new XMLHttpRequest();
     poll_xhr.timeout = 11000;
     poll_xhr.onreadystatechange = function() { 
       if (poll_xhr.readyState == 4) {
         if (poll_xhr.status == 200) {
+          fact = JSON.parse(poll_xhr.responseText);
+          who = fact['who'] || 'error';
+          says = fact['says'] || 'error';
+          var chat_div = document.getElementById('chat');
+          chat_div.innerHTML += who + ': ' + says + '<br>';
+          chat_div.scrollTop = chat_div.scrollHeight;
           console.log(poll_xhr.responseText); 
         } else {
           console.log('Timed out');
         }
-        //detect disconnect error and stop
+        status_div.innerHTML = 'Finished poll';
         setTimeout(function() {poll(retrieval_url)}, 1000);
       } 
     }
