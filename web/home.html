@@ -1,5 +1,34 @@
 <html>
 <body>
   Welcome to the combo microservices server.
+<script type='text/javascript'>
+  poll = function(retrieval_url) {
+    console.log('Starting poll for ' + retrieval_url);
+    var poll_xhr = new XMLHttpRequest();
+    poll_xhr.timeout = 11000;
+    poll_xhr.onreadystatechange = function() { 
+      if (poll_xhr.readyState == 4) {
+        if (poll_xhr.status == 200) {
+          console.log(poll_xhr.responseText); 
+        } else {
+          console.log('Timed out');
+        }
+        //detect disconnect error and stop
+        setTimeout(function() {poll(retrieval_url)}, 1000);
+      } 
+    }
+    poll_xhr.open('GET', retrieval_url, true);
+    poll_xhr.send(null);
+  }
+  var sub_xhr = new XMLHttpRequest();
+  sub_xhr.onreadystatechange  = function() { 
+    if (sub_xhr.readyState == 4) {
+      retrieval_url = JSON.parse(sub_xhr.responseText)['retrieval_url'];
+      poll(retrieval_url)
+    }
+  }
+  sub_xhr.open('POST', 'http://localhost:5000/topics/chat/subscriptions', true);
+  sub_xhr.send(null);
+</script>
 </body>
 </html>
