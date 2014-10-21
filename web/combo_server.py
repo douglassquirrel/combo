@@ -12,7 +12,20 @@ app = Flask('combo')
 
 @app.route('/')
 def home():
-    return _respond(app.config['HOME_HTML'], mimetype='text/html')
+    home_page = _get_home_page()
+    return _respond(home_page, mimetype='text/html')
+
+def _get_home_page():
+    repl = {'%ROOT_URL%': _ext_url_for('home'),
+            '%TOPICS_URL%': _ext_url_for('topics'),
+            '%FACTS_URL%': _ext_url_for('get_facts', topic='TOPIC'),
+            '%SUBSCRIPTION_URL%': 
+            _ext_url_for('subscription', topic='TOPIC'),
+            '%FROM_SUB_URL%':
+                _ext_url_for('get_next_fact_from_sub',
+                             topic='TOPIC', sub_id='SUB_ID')}
+    page = app.config['HOME_HTML']
+    return reduce(lambda x, y: x.replace(y, repl[y]), repl, page)
 
 @app.route('/topics', methods=['GET'])
 def topics():
@@ -90,7 +103,7 @@ def _is_valid_int_string(s):
     except ValueError:
         return False
 
-def _ext_url_for(function, topic, sub_id=None):
+def _ext_url_for(function, topic=None, sub_id=None):
     return url_for(function, topic=topic, sub_id=sub_id, _external=True)
 
 default_config_file = pathjoin(dirname(__file__), 'settings.py')

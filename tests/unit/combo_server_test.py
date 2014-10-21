@@ -7,7 +7,20 @@ from web.combo_server import app
 from web.pubsub import PubSubError
 from sys import stderr
 
-TEST_HOME_PAGE = 'test home page'
+TEST_HOME_PAGE = '''
+    root:         %ROOT_URL%
+    topics:       %TOPICS_URL%
+    facts:        %FACTS_URL%
+    subscription: %SUBSCRIPTION_URL%
+    from_sub:     %FROM_SUB_URL%
+'''
+TEST_HOME_PAGE_WITH_SUBS = '''
+    root:         http://foo.com/
+    topics:       http://foo.com/topics
+    facts:        http://foo.com/topics/TOPIC/facts
+    subscription: http://foo.com/topics/TOPIC/subscriptions
+    from_sub:     http://foo.com/topics/TOPIC/subscriptions/SUB_ID/next
+'''
 TEST_TOPICS = ['headlines', 'story.creation', 'story.update']
 FACTS_URL_PATTERN = 'http://foo.com/topics/%s/facts'
 SUB_URL_PATTERN = 'http://foo.com/topics/%s/subscriptions'
@@ -37,8 +50,9 @@ class ComboServerTest(TestCase):
 
     def test_home(self):
         self.app.config['HOME_HTML'] = TEST_HOME_PAGE
-        self._assertResponsePlain('Should respond to /', self.client.get('/'),
-                                  200, 'text/html', TEST_HOME_PAGE)
+        self._assertResponsePlain('Should respond to / with correct subs',
+                                  self.client.get('/'),
+                                  200, 'text/html', TEST_HOME_PAGE_WITH_SUBS)
 
     def test_topics(self):
         factspace = self._mock_factspace()

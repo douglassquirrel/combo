@@ -1,6 +1,20 @@
 <html>
 <body>
-  Welcome to the combo microservices server.
+  <h2>Welcome to the combo microservices server!</h2>
+  <p>URLs for this server include:</p>
+  <ul>
+    <li>%ROOT_URL% - this page</li>
+    <li>%TOPICS_URL% - topics in use</li>
+    <li>%FACTS_URL% - facts for a given topic; POST to add a fact</li>
+    <li>%SUBSCRIPTION_URL% - POST to create a subscription to a topic</li>
+    <li>%FROM_SUB_URL% - latest fact from subscription</li>
+  </ul>
+  <p>
+    See the API documentation at
+    <a href="http://docs.combo.apiary.io">http://docs.combo.apiary.io</a>
+    for further details.
+  </p>
+
 <script type='text/javascript'>
   poll = function(retrieval_url) {
     console.log('Starting poll for ' + retrieval_url);
@@ -27,7 +41,7 @@
       poll(retrieval_url)
     }
   }
-  sub_xhr.open('POST', 'http://localhost:5000/topics/chat/subscriptions', true);
+  sub_xhr.open('POST', '%SUBSCRIPTION_URL%'.replace('TOPIC', 'chat'), true);
   sub_xhr.send(null);
 </script>
 </body>
