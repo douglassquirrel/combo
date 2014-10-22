@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+from datetime import datetime
 from httplib import HTTPConnection
 from json import dumps, loads
 from sys import argv
@@ -78,6 +79,7 @@ class HTTPTest(TestCase):
         response = self._visit(verb='GET', path=path, exp_status=200,
                                exp_content_type=JSON_CONTENT_TYPE)
         self.assertEqual(FACTS[0], loads(response.read()))
+        self._assertHeadersPreventCaching(dict(response.getheaders()))
         
     def test_subscribe_and_timeout(self):
         topic = self._new_unique_topic()
@@ -173,6 +175,16 @@ class HTTPTest(TestCase):
 
     def _new_unique_topic(self):
         return str(uuid1())
+
+    def _assertHeadersPreventCaching(self, headers):
+        self.assertEqual('no-cache, must-revalidate',
+                         headers['cache-control'])
+        expires = datetime.strptime(headers['expires'],
+                                    '%a, %d %b %Y %H:%M:%S GMT')
+        self._assertIsInPast(expires, 'Should expire in the past')
+
+    def _assertIsInPast(self, date, msg):
+        self.assertTrue(date < datetime.now(), msg)
 
 if __name__ == '__main__':
     main(argv=['http_test.py'])
