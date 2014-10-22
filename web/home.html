@@ -7,13 +7,21 @@
 <body>
   <h2>Welcome to the combo microservices server!</h2>
   <p>URLs for this server include:</p>
-  <ul>
-    <li>%ROOT_URL% - this page</li>
-    <li>%TOPICS_URL% - topics in use</li>
-    <li>%FACTS_URL% - facts for a given topic; POST to add a fact</li>
-    <li>%SUBSCRIPTION_URL% - POST to create a subscription to a topic</li>
-    <li>%FROM_SUB_URL% - latest fact from subscription</li>
-  </ul>
+  <table border="1">
+    <thead>
+      <tr><th>URL</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>%ROOT_URL%</td><td>this page</td></tr>
+      <tr><td>%TOPICS_URL%</td><td>topics in use</td></tr>
+      <tr><td>%FACTS_URL%</td>
+          <td>facts for given topic; POST to add a fact</td></tr>
+      <tr><td>%SUBSCRIPTION_URL%</td>
+          <td>POST to create subscription to a topic</td></tr>
+      <tr><td>%FROM_SUB_URL%</td>
+          <td>latest fact from subscription</td></tr>
+    </tbody>
+  </table>
   <p>
     See the API documentation at
     <a href="http://docs.combo.apiary.io">http://docs.combo.apiary.io</a>
