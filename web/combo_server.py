@@ -88,7 +88,7 @@ def _respond(data, mimetype, status=200):
     response = Response(data, mimetype=mimetype)
     response.charset = app.config['CHARSET']
     response.status_code = status
-    response.headers.add('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT')
+    response.headers.add('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT')
     response.headers.add('Cache-control', 'no-cache, must-revalidate')
     return response
 

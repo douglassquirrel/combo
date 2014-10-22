@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+from datetime import datetime
 from json import loads, dumps
 from mock import Mock
 from unittest import TestCase
@@ -186,15 +187,26 @@ class ComboServerTest(TestCase):
         return self.app.config['PUBSUB']
 
     def _assertResponsePlain(self, msg, response, status_code, mimetype, data):
-        self.assertEqual(status_code, response.status_code, msg=msg)
-        self.assertEqual('%s; charset=utf-8' % (mimetype,),
-                         response.content_type, msg=msg)
-        self.assertEqual(data, response.data, msg=msg)
+        self._assertResponse(msg, response, status_code, 
+                             '%s; charset=utf-8' % (mimetype,), data)
 
     def _assertResponseJSON(self, msg, response, status_code, data):
-        self.assertEqual(status_code, response.status_code, msg=msg)
-        self.assertEqual('application/json', response.content_type, msg=msg)
-        self.assertEqual(data, loads(response.data), msg=msg)
+        self._assertResponse(msg, response, status_code, 'application/json',
+                             data, loads)
+
+    def _assertResponse(self, msg, response, status_code, content_type,
+                        data, transformer=lambda x: x):
+        self.assertEqual(status_code, response.status_code, msg=msg)        
+        self.assertEqual(content_type, response.content_type, msg=msg)
+        self.assertEqual(data, transformer(response.data), msg=msg)
+        self.assertEqual('no-cache, must-revalidate',
+                         response.headers['Cache-control'])
+        expires = datetime.strptime(response.headers['Expires'],
+                                    '%a, %d %b %Y %H:%M:%S GMT')
+        self._assertIsInPast(expires, 'Should expire in the past')
+
+    def _assertIsInPast(self, date, msg):
+        self.assertTrue(date < datetime.now(), msg)
 
 class Devnull(object):
     def write(self, _):
