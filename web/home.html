@@ -6,70 +6,116 @@
 </head>
 <body>
   <h2>Welcome to the combo microservices server!</h2>
-  <p>URLs for this server include:</p>
-  <table border="1">
-    <thead>
-      <tr><th>URL</th><th>Purpose</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>%ROOT_URL%</td><td>this page</td></tr>
-      <tr><td>%TOPICS_URL%</td><td>topics in use</td></tr>
-      <tr><td>%FACTS_URL%</td>
-          <td>facts for given topic; POST to add a fact</td></tr>
-      <tr><td>%SUBSCRIPTION_URL%</td>
-          <td>POST to create subscription to a topic</td></tr>
-      <tr><td>%FROM_SUB_URL%</td>
-          <td>latest fact from subscription</td></tr>
-    </tbody>
-  </table>
-  <p>
-    See the API documentation at
-    <a href="http://docs.combo.apiary.io">http://docs.combo.apiary.io</a>
-    for further details.
-  </p>
-  <h3>Chat example</h3>
-  <p>
-    Publish facts of the form <code>{"who": "joe", "says": "hello"}</code>
-    to the topic "chat" to see them below.
-  </p> 
-  <div id="status" style="font-size:small"></div>
-  <div id="chat" style="max-height:100px;overflow:auto;"></div>
+    <p>URLs for this server include:</p>
+    <table border="1">
+      <thead>
+        <tr><th>URL</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>%ROOT_URL%</td><td>this page</td></tr>
+        <tr><td>%TOPICS_URL%</td><td>topics in use</td></tr>
+        <tr><td>%FACTS_URL%</td>
+            <td>facts for given topic; POST to add a fact</td></tr>
+        <tr><td>%SUBSCRIPTION_URL%</td>
+            <td>POST to create subscription to a topic</td></tr>
+        <tr><td>%FROM_SUB_URL%</td>
+            <td>latest fact from subscription</td></tr>
+      </tbody>
+    </table>
+    <p>
+      See the API documentation at
+      <a href="http://docs.combo.apiary.io">http://docs.combo.apiary.io</a>
+      for further details.
+    </p>
+  <h2>Chat example</h2>
+    <p>
+      Publish facts of the form <code>{"who": "joe", "says": "hello"}</code>
+      to the topic "chat" to see them below.
+    </p> 
+    <div id="status" style="font-size:small"></div>
+    <div id="chat" style="max-height:100px;overflow:auto;"></div>
+  <h2>Firehose</h2>
+    <p>
+      Below are the last 10 facts published on this server. This table is
+      refreshed once a second.
+    </p>
+    <div id="firehose"></div>
+
 <script type='text/javascript'>
-  poll = function(retrieval_url) {
+  update_chat = function(fact_string) {
+    fact = JSON.parse(fact_string);
+    who = fact['who'] || 'error';
+    says = fact['says'] || 'error';
+    var chat_div = document.getElementById('chat');
+    chat_div.innerHTML += who + ': ' + says + '<br>';
+    chat_div.scrollTop = chat_div.scrollHeight;
+    console.log('chat: ' + fact_string); 
+  }
+
+  chat_poll = function(retrieval_url) {
     var status_div = document.getElementById('status');
     status_div.innerHTML = 'Starting poll';
-    console.log('Starting poll for ' + retrieval_url);
+    console.log('chat: starting poll for ' + retrieval_url);
     var poll_xhr = new XMLHttpRequest();
     poll_xhr.timeout = 11000;
     poll_xhr.onreadystatechange = function() { 
       if (poll_xhr.readyState == 4) {
         if (poll_xhr.status == 200) {
-          fact = JSON.parse(poll_xhr.responseText);
-          who = fact['who'] || 'error';
-          says = fact['says'] || 'error';
-          var chat_div = document.getElementById('chat');
-          chat_div.innerHTML += who + ': ' + says + '<br>';
-          chat_div.scrollTop = chat_div.scrollHeight;
-          console.log(poll_xhr.responseText); 
+          update_chat(poll_xhr.responseText);
         } else {
-          console.log('Timed out');
+          console.log('chat: timed out');
         }
         status_div.innerHTML = 'Finished poll';
-        setTimeout(function() {poll(retrieval_url)}, 1000);
+        setTimeout(function() {chat_poll(retrieval_url)}, 1000);
       } 
     }
     poll_xhr.open('GET', retrieval_url, true);
     poll_xhr.send(null);
   }
+  
   var sub_xhr = new XMLHttpRequest();
   sub_xhr.onreadystatechange  = function() { 
     if (sub_xhr.readyState == 4) {
       retrieval_url = JSON.parse(sub_xhr.responseText)['retrieval_url'];
-      poll(retrieval_url)
+      chat_poll(retrieval_url);
     }
   }
   sub_xhr.open('POST', '%SUBSCRIPTION_URL%'.replace('TOPIC', 'chat'), true);
   sub_xhr.send(null);
+</script>
+
+<script type='text/javascript'>
+  update_firehose = function(facts) {
+    for (var i = 0; i < facts.length; i++) {
+      var fact = facts[i];
+      var id = fact['combo_id']; delete fact['combo_id'];
+      var topic = fact['combo_topic']; delete fact['combo_topic'];
+      var ts = fact['combo_timestamp']; delete fact['combo_timestamp'];
+      var timestamp = new Date(ts*1000).toUTCString();
+      console.log('firehose: id=' + id 
+                        + ', topic=' + topic 
+                        + ', timestamp=' + timestamp 
+                        + ', fact=' + JSON.stringify(fact));
+    }
+  }
+  
+  firehose_poll = function() {
+    var fh_xhr = new XMLHttpRequest();
+    fh_xhr.onreadystatechange  = function() { 
+      if (fh_xhr.readyState == 4) {
+        update_firehose(JSON.parse(fh_xhr.responseText));
+        setTimeout(firehose_poll, 1000);
+      }
+    }
+    fh_xhr.ontimeout = function() {
+      console.log('firehose: timed out');
+      setTimeout(firehose_poll, 1000);
+    }
+    fh_xhr.timeout = 2000;
+    fh_xhr.open('GET', '%FACTS_URL%'.replace('TOPIC', '%23'), true);
+    fh_xhr.send(null);
+  }
+  firehose_poll();
 </script>
 </body>
 </html>
