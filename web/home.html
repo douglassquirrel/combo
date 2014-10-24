@@ -86,17 +86,22 @@
 
 <script type='text/javascript'>
   update_firehose = function(facts) {
+    table = '<table border="1"><thead>'
+          + '<tr><th>ID</th><th>Topic</th><th>Time</th><th>Fact</th></tr>'
+          + '</thead><tbody>';
     for (var i = 0; i < facts.length; i++) {
       var fact = facts[i];
       var id = fact['combo_id']; delete fact['combo_id'];
       var topic = fact['combo_topic']; delete fact['combo_topic'];
       var ts = fact['combo_timestamp']; delete fact['combo_timestamp'];
       var timestamp = new Date(ts*1000).toUTCString();
-      console.log('firehose: id=' + id 
-                        + ', topic=' + topic 
-                        + ', timestamp=' + timestamp 
-                        + ', fact=' + JSON.stringify(fact));
+      table += '<tr><td>' + id + '</td><td>' + topic + '</td>'
+                 + '<td>' + timestamp + '</td>'
+                 + '<td>' + JSON.stringify(fact) + '</td></tr>';
     }
+    table += '</tbody></table>';
+    var fh_div = document.getElementById('firehose');
+    fh_div.innerHTML = table;
   }
   
   firehose_poll = function() {
