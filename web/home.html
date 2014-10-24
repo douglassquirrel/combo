@@ -100,9 +100,10 @@
       var topic = fact['combo_topic']; delete fact['combo_topic'];
       var ts = fact['combo_timestamp']; delete fact['combo_timestamp'];
       var timestamp = new Date(ts*1000).toUTCString();
+      var fact_string = JSON.stringify(fact).substring(0, 100);
       table += '<tr><td>' + id + '</td><td>' + topic + '</td>'
                  + '<td>' + timestamp + '</td>'
-                 + '<td>' + JSON.stringify(fact) + '</td></tr>';
+                 + '<td>' + fact_string + '</td></tr>';
     }
     table += '</tbody></table>';
     var fh_div = document.getElementById('firehose');
