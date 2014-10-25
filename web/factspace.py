@@ -21,6 +21,7 @@ INSERT_FACT_SQL = '''
 
 class Factspace:
     def __init__(self, url):
+        return
         self.url = url
         conn = connect(self.url)
         result = run_sql(conn, CHECK_FACTS_TABLE_SQL, results=True)[0][0]
@@ -29,6 +30,7 @@ class Factspace:
         conn.close()
 
     def list_topics(self):
+        return []
         conn = connect(self.url)
         result = run_sql(conn, GET_TOPICS_SQL, results=True)
         ret_val = map(lambda x: x[0], result)
@@ -36,6 +38,7 @@ class Factspace:
         return ret_val
 
     def last_n(self, topic, number):
+        return []
         conn = connect(self.url)
         topic = self._translate_wildcards(topic)
         result = run_sql(conn, GET_LAST_N_FACTS_SQL % (number,),
@@ -45,6 +48,7 @@ class Factspace:
         return ret_val
 
     def after_id(self, topic, id):
+        return []
         conn = connect(self.url)
         topic = self._translate_wildcards(topic)
         result = run_sql(conn, GET_AFTER_ID_FACTS_SQL,
@@ -54,6 +58,7 @@ class Factspace:
         return ret_val
 
     def add_fact(self, topic, fact):
+        return
         conn = connect(self.url)
         run_sql(conn, INSERT_FACT_SQL, results=False,
                 parameters=[topic, dumps(fact)])
