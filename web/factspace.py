@@ -21,49 +21,30 @@ INSERT_FACT_SQL = '''
 
 class Factspace:
     def __init__(self, url):
-        return
-        self.url = url
-        conn = connect(self.url)
-        result = run_sql(conn, CHECK_FACTS_TABLE_SQL, results=True)[0][0]
+        self.conn = connect(url)
+        result = run_sql(self.conn, CHECK_FACTS_TABLE_SQL, results=True)[0][0]
         if result != 1:
             raise MissingTableError('Facts table not present.')
-        conn.close()
 
     def list_topics(self):
-        return []
-        conn = connect(self.url)
-        result = run_sql(conn, GET_TOPICS_SQL, results=True)
-        ret_val = map(lambda x: x[0], result)
-        conn.close()
-        return ret_val
+        result = run_sql(self.conn, GET_TOPICS_SQL, results=True)
+        return map(lambda x: x[0], result)
 
     def last_n(self, topic, number):
-        return []
-        conn = connect(self.url)
         topic = self._translate_wildcards(topic)
-        result = run_sql(conn, GET_LAST_N_FACTS_SQL % (number,),
+        result = run_sql(self.conn, GET_LAST_N_FACTS_SQL % (number,),
                          results=True, parameters=[topic])
-        ret_val = map(self._format_fact, result)
-        conn.close()
-        return ret_val
+        return map(self._format_fact, result)
 
     def after_id(self, topic, id):
-        return []
-        conn = connect(self.url)
         topic = self._translate_wildcards(topic)
-        result = run_sql(conn, GET_AFTER_ID_FACTS_SQL,
+        result = run_sql(self.conn, GET_AFTER_ID_FACTS_SQL,
                          results=True, parameters=[topic, id])
-        ret_val = map(self._format_fact, result)
-        conn.close()
-        return ret_val
+        return map(self._format_fact, result)
 
     def add_fact(self, topic, fact):
-        return
-        conn = connect(self.url)
-        run_sql(conn, INSERT_FACT_SQL, results=False,
+        run_sql(self.conn, INSERT_FACT_SQL, results=False,
                 parameters=[topic, dumps(fact)])
-        conn.close()
-        return
 
     def _format_fact(self, returned_fact):
         fact = dict(returned_fact[3])
