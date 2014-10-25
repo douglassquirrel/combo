@@ -1,5 +1,5 @@
-eventlet
 flask
+gevent
 gunicorn
 mock
 nose
