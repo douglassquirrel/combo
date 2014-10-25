@@ -2,17 +2,17 @@
 
 1. Sign up for a [Heroku account](https://www.heroku.com).
 2. Install the [Heroku toolbelt](https://toolbelt.heroku.com).
-2. Pick an app name (HEROKU_APP in the below).
-3. Clone the combo repository locally (path to this clone is LOCAL_REPO below).
-4. Run these commands:
+3. Pick an app name (HEROKU_APP in the below).
+4. Clone the combo repository locally (path to this clone is LOCAL_REPO below).
+5. Run these commands:
 
-    heroku apps:create HEROKU_APP
-    cd LOCAL_REPO
-    git remote add heroku git@heroku.com:HEROKU_APP.git
-    git push heroku master
-    heroku ps:scale web=1
-    heroku ps:scale archivist=1
-    heroku open
+        heroku apps:create HEROKU_APP
+        cd LOCAL_REPO
+        git remote add heroku git@heroku.com:HEROKU_APP.git
+        git push heroku master
+        heroku ps:scale web=1
+        heroku ps:scale archivist=1
+        heroku open
 
 ## Installation on fresh install of Ubuntu Linux 14.04 and Postgres
 
