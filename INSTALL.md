@@ -1,9 +1,10 @@
 ## Installation on heroku
 
 1. Sign up for a [Heroku account](https://www.heroku.com).
-2. Install the [Heroku toolbelt](https://toolbelt.heroku.com).
+2. Add the [Bigwig addon](https://addons.heroku.com/rabbitmq-bigwig).
+2. Install the [Heroku toolbelt](https://toolbelt.heroku.com) locally.
 3. Pick an app name (HEROKU_APP in the below).
-4. Clone the combo repository locally (path to this clone is LOCAL_REPO below).
+4. Clone the combo repository (local path to this clone is LOCAL_REPO below).
 5. Run these commands:
 
         heroku apps:create HEROKU_APP
