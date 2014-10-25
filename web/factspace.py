@@ -21,29 +21,34 @@ INSERT_FACT_SQL = '''
 
 class Factspace:
     def __init__(self, url):
-        self.conn = connect(url)
-        result = run_sql(self.conn, CHECK_FACTS_TABLE_SQL, results=True)[0][0]
+        self.url = url
+        conn = connect(self.url)
+        result = run_sql(conn, CHECK_FACTS_TABLE_SQL, results=True)[0][0]
         if result != 1:
             raise MissingTableError('Facts table not present.')
 
     def list_topics(self):
-        result = run_sql(self.conn, GET_TOPICS_SQL, results=True)
+        conn = connect(self.url)
+        result = run_sql(conn, GET_TOPICS_SQL, results=True)
         return map(lambda x: x[0], result)
 
     def last_n(self, topic, number):
+        conn = connect(self.url)
         topic = self._translate_wildcards(topic)
-        result = run_sql(self.conn, GET_LAST_N_FACTS_SQL % (number,),
+        result = run_sql(conn, GET_LAST_N_FACTS_SQL % (number,),
                          results=True, parameters=[topic])
         return map(self._format_fact, result)
 
     def after_id(self, topic, id):
+        conn = connect(self.url)
         topic = self._translate_wildcards(topic)
-        result = run_sql(self.conn, GET_AFTER_ID_FACTS_SQL,
+        result = run_sql(conn, GET_AFTER_ID_FACTS_SQL,
                          results=True, parameters=[topic, id])
         return map(self._format_fact, result)
 
     def add_fact(self, topic, fact):
-        run_sql(self.conn, INSERT_FACT_SQL, results=False,
+        conn = connect(self.url)
+        run_sql(conn, INSERT_FACT_SQL, results=False,
                 parameters=[topic, dumps(fact)])
 
     def _format_fact(self, returned_fact):
