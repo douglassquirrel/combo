@@ -1,5 +1,5 @@
 http://$(SERVER)
 http://$(SERVER)/topics
-http://$(SERVER)/topics/facts
+http://$(SERVER)/topics/news/facts
 http://$(SERVER)/topics/news/facts POST {"headline": "Lode Found!", "body": "Gold in them hills!"}
 
