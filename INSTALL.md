@@ -17,18 +17,24 @@
 
 ## Installation on fresh install of Ubuntu Linux 14.04 and Postgres
 
-TODO: update these instructions after heroku migration
-
 AWS: set up RDS Postgres instance and EC2 Ubuntu instance
 
 Postgres:
 
-    CREATE TABLE facts (
+Create user called combo
+    createuser combo
+Create database called combo
+    createdb combo
+Create facts table in combo
+    psql combo
+    Paste "CREATE TABLE facts (
         id serial primary key,
         topic character varying(255),
         ts timestamp without time zone,
         content json
-    );
+    );"
+Give combo user access to facts table
+    "GRANT ALL PRIVILEGES ON facts TO combo;" (at the psql prompt)
 
 On EC2 instance:
 
@@ -45,4 +51,19 @@ Then from remote machine
     ./test-rabbit.py [host]
     ./test-postgres.py [postgres host]
 
-    
+## Installation on OS X
+
+This is intended for local development, not a production server
+
+Install Homebrew (if you somehow haven't)
+    Read http://brew.sh/ for details
+Install Postgres
+    brew install postgresql
+Start Postgres
+    postgres -D /usr/local/var/postgres &
+Install RabbitMQ
+    brew install rabbitmq
+Start RabbitMQ
+    /usr/local/opt/rabbitmq/sbin/rabbitmq-server &
+
+Then follow the instructions above to setup Postgres
