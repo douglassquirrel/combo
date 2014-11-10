@@ -6,4 +6,4 @@ To run tests, execute `nosetests` in the home directory.
 
 To run under gunicorn:
 
-    gunicorn web.combo_server:app --log-file - -w 4 -k eventlet
+    gunicorn web.combo_server:app --log-file - -w 4 -k gevent
