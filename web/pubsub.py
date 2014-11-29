@@ -34,7 +34,7 @@ class PubSub:
 
     def subscribe(self, topic):
         self._check_channel()
-        for i in range(0, 5):
+        for i in range(0, 10):
             try:
                 queue = self._get_queue(topic)
                 return queue
@@ -63,9 +63,18 @@ class PubSub:
 
     def _check_queue(self, queue):
         try:
-            return self.channel.basic_get(queue=queue, no_ack=True)[2]
+            return self._check_queue_retry(queue)
         except AMQPError as e:
             raise PubSubError(e)
+
+    def _check_queue_retry(self, queue):
+        for i in range(0, 10):
+            try:
+                result = self.channel.basic_get(queue=queue, no_ack=True)[2]
+                return result
+            except AssertionError as e:
+                stderr.write('Try %d to check queue failed\n' % (i,))
+        raise PubSubError
 
     def _safe_loads(self, value):
         if value is None:
