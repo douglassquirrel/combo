@@ -1,4 +1,4 @@
-from time import time as now
+from time import sleep, time as now
 
 class Alarm:
     def __init__(self, duration):
@@ -18,4 +18,4 @@ def spin(f, duration):
             return result
         if alarm.is_ringing():
             return None
-    
+        sleep(0.1)
