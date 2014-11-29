@@ -62,6 +62,7 @@ class PubSub:
         self.channel.start_consuming()
 
     def _check_queue(self, queue):
+        self._check_channel()
         try:
             return self._check_queue_retry(queue)
         except AMQPError as e:
