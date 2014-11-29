@@ -49,6 +49,7 @@ class PubSub:
         return queue
 
     def fetch_from_sub(self, topic, queue, timeout, spin=spin):
+        self._check_connection()
         self._check_channel()
         result = spin(lambda: self._check_queue(queue), timeout)
         return self._safe_loads(result)
