@@ -62,7 +62,7 @@ class PubSub:
         self.channel.start_consuming()
 
     def _check_queue(self, queue):
-        self._check_channel()
+        self._check_connection()
         try:
             return self._check_queue_retry(queue)
         except AMQPError as e:
@@ -75,6 +75,8 @@ class PubSub:
                 return result
             except AssertionError as e:
                 stderr.write('Try %d to check queue failed\n' % (i,))
+                self._create_connection()
+                self._create_channel_and_exchange()
         raise PubSubError
 
     def _safe_loads(self, value):
