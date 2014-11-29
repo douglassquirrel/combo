@@ -71,8 +71,11 @@ class PubSub:
     def _check_queue_retry(self, queue):
         for i in range(0, 10):
             try:
-                result = self.channel.basic_get(queue=queue, no_ack=True)[2]
-                return result
+                method_frame, header_frame, body \
+                    = self.channel.basic_get(queue=queue)
+                if method_frame is not None:
+                    self.channel.basic_ack(method_frame.delivery_tag)
+                return body
             except AssertionError as e:
                 stderr.write('Try %d to check queue failed\n' % (i,))
                 self._create_connection()
