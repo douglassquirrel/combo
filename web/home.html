@@ -32,6 +32,7 @@
       Source code for this server</a> is available under an open-source
       license.
     </p>
+<!--
   <h2>Chat example</h2>
     <p>
       Publish facts of the form <code>{"who": "joe", "says": "hello"}</code>
@@ -39,6 +40,7 @@
     </p> 
     <div id="status" style="font-size:small"></div>
     <div id="chat" style="max-height:100px;overflow:auto;"></div>
+-->
   <h2>Firehose</h2>
     <p>
       Below are the last 10 facts published on this server. This table is
@@ -58,6 +60,7 @@
   }
 
   chat_poll = function(retrieval_url) {
+    return
     var status_div = document.getElementById('status');
     status_div.innerHTML = 'Starting poll';
     console.log('chat: starting poll for ' + retrieval_url);
