@@ -9,11 +9,24 @@ class PubSubError(Exception):
 
 class PubSub:
     def __init__(self, url, exchange):
-        self.conn = BlockingConnection(URLParameters(url))
+        self.url = url
         self.exchange = exchange
+        self._create_connection()
         self._create_channel_and_exchange()
 
+    def _create_connection(self):
+        self.conn = BlockingConnection(URLParameters(self.url))
+
+    def _check_connection(self):
+        if not self.conn.is_open:
+            stderr.write('Connection was closed, reopening')
+            self._create_connection()
+            self._create_channel_and_exchange()
+            if not self.conn.is_open:
+                raise CannotReopenChannelError
+
     def publish(self, topic, fact):
+        self._check_connection()
         self._check_channel()
         self.channel.basic_publish(exchange=self.exchange,
                                    routing_key=topic,
