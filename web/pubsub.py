@@ -19,11 +19,11 @@ class PubSub:
 
     def _check_connection(self):
         if not self.conn.is_open:
-            stderr.write('Connection was closed, reopening')
+            stderr.write('Connection was closed, reopening\n')
             self._create_connection()
             self._create_channel_and_exchange()
             if not self.conn.is_open:
-                raise CannotReopenChannelError
+                raise CannotReopenConnectionError
 
     def publish(self, topic, fact):
         self._check_connection()
@@ -34,6 +34,15 @@ class PubSub:
 
     def subscribe(self, topic):
         self._check_channel()
+        for i in range(0, 5):
+            try:
+                queue = self._get_queue(topic)
+                return queue
+            except:
+                stderr.write('Try %d to get queue failed\n' % (i,))
+        raise CannotSubscribeError
+
+    def _get_queue(self, topic):
         queue = self.channel.queue_declare(exclusive=False).method.queue
         self.channel.queue_bind(exchange=self.exchange, queue=queue,
                                 routing_key=topic)
@@ -75,6 +84,12 @@ class PubSub:
         self.channel = self.conn.channel()
         self.channel.exchange_declare(exchange=self.exchange, type='topic')
 
-def CannotReopenChannelError(Exception):
+class CannotReopenChannelError(Exception):
+    pass
+
+class CannotReopenConnectionError(Exception):
+    pass
+
+class CannotSubscribeError(Exception):
     pass
             

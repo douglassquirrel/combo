@@ -2,4 +2,4 @@ http://$(SERVER)
 http://$(SERVER)/topics
 http://$(SERVER)/topics/news/facts
 http://$(SERVER)/topics/news/facts POST {"headline": "Lode Found!", "body": "Gold in them hills!"}
-
+http://$(SERVER)/topics/news/subscriptions POST 
