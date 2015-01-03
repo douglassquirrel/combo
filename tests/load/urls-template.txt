@@ -3,3 +3,7 @@ http://$(SERVER)/topics
 http://$(SERVER)/topics/news/facts
 http://$(SERVER)/topics/news/facts POST {"headline": "Lode Found!", "body": "Gold in them hills!"}
 http://$(SERVER)/topics/news/subscriptions POST 
+http://$(SERVER)/topics/news/subscriptions/$(SUBID1)/next
+http://$(SERVER)/topics/news/subscriptions/$(SUBID2)/next
+http://$(SERVER)/topics/news/subscriptions/$(SUBID3)/next
+http://$(SERVER)/topics/news/subscriptions/$(SUBID4)/next
