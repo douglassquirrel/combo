@@ -2,9 +2,10 @@
 
 from json import loads
 from shutil import copyfileobj
-from subprocess import call
+from subprocess import Popen
 from sys import argv, exit
 from tempfile import mkstemp
+from time import sleep
 from urllib2 import Request, urlopen
 
 print 'Starting siege driver'
@@ -34,10 +35,20 @@ def generate_urls_file(server, sub_ids):
         copyfileobj(src, dest)
     return urls_file
 
+def start_siege(urls_file):
+    print 'Siege starting - Ctrl-C to stop it'
+    return Popen(['siege', '-i', '-f', urls_file])
+
+def test_during_siege():
+    while True:
+        print 'Test during siege'
+        sleep(1)
+
 def run():
     server = parse_args(argv)
     sub_ids = get_sub_ids(server)
     urls_file = generate_urls_file(server, sub_ids)
-    call(['siege', '-i', '-f', urls_file])
-        
+    start_siege(urls_file)
+    test_during_siege()
+    
 run()
