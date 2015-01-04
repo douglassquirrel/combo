@@ -1,14 +1,15 @@
 #! /usr/bin/env python
 
-# Requires the siege load test program
-# See http://www.joedog.org/siege-home/
-
 from json import loads
 from shutil import copyfileobj
 from subprocess import call
 from sys import argv, exit
 from tempfile import mkstemp
 from urllib2 import Request, urlopen
+
+print 'Starting siege driver'
+print 'Requires the siege load test program'
+print 'See http://www.joedog.org/siege-home/'
 
 def parse_args(args):
     if len(args) < 2:
@@ -38,5 +39,5 @@ def run():
     sub_ids = get_sub_ids(server)
     urls_file = generate_urls_file(server, sub_ids)
     call(['siege', '-i', '-f', urls_file])
-
+        
 run()
