@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from json import loads
+from random import randint
 from shutil import copyfileobj
 from subprocess import Popen
 from sys import argv, exit
@@ -20,11 +21,11 @@ def parse_args(args):
     return args[1]
 
 def get_sub_ids(server):
-    return [get_sub_id(server) for i in range(4)]
+    return [get_sub_id(server, 'news') for i in range(4)]
 
-def get_sub_id(server):
-    request = Request('http://%s/topics/news/subscriptions' % (server,), '')
-    return loads(urlopen(request).read())['subscription_id']
+def get_sub_id(server, topic):
+    url = 'http://%s/topics/%s/subscriptions' % (server, topic)
+    return loads(urlopen(Request(url, '')).read())['subscription_id']
 
 def generate_urls_file(server, sub_ids):
     urls_file = mkstemp(suffix='.txt', prefix='combo-siege-urls-')[1]
@@ -39,9 +40,12 @@ def start_siege(urls_file):
     print 'Siege starting - Ctrl-C to stop it'
     return Popen(['siege', '-i', '-f', urls_file])
 
-def test_during_siege():
+def test_during_siege(server):
     while True:
         print 'Test during siege'
+        topic = str(randint(1000, 9999))
+        sub_id = get_sub_id(server, topic)
+        print '%s %s' % (topic, sub_id)
         sleep(1)
 
 def run():
@@ -49,6 +53,6 @@ def run():
     sub_ids = get_sub_ids(server)
     urls_file = generate_urls_file(server, sub_ids)
     start_siege(urls_file)
-    test_during_siege()
+    test_during_siege(server)
     
 run()
