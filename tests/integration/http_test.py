@@ -40,7 +40,6 @@ class HTTPTest(TestCase):
     def test_retrieve_fact(self):
         topic = self._new_unique_topic()
         self._publish_fact(topic, FACTS[0])
-        return
         sleep(0.1)
         response = self._visit(verb='GET', path='topics/%s/facts' % (topic,),
                                exp_status=200,
