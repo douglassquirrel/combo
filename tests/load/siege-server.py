@@ -45,7 +45,21 @@ def test_during_siege(server):
         print 'Test during siege'
         topic = str(randint(1000, 9999))
         sub_id = get_sub_id(server, topic)
-        print '%s %s' % (topic, sub_id)
+        post_url = 'http://%s/topics/%s/facts' % (server, topic)
+        post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
+        response = urlopen(Request(post_url, post_data))
+        print 'Topic %s, sub_id %s, post response %d' \
+            % (topic, sub_id, response.getcode())
+        sleep(1)
+
+        facts_url = 'http://%s/topics/%s/facts' % (server, topic)
+        response = urlopen(Request(facts_url))
+        returned_facts = loads(response.read())
+        num_facts = len(returned_facts)
+        print 'Fetch resp code %s, facts returned: %d' \
+            % (response.getcode(), len(returned_facts))
+        if num_facts != 1:
+            print 'ERROR!!! Wrong number of facts'
         sleep(1)
 
 def run():
