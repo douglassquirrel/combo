@@ -41,27 +41,33 @@ def start_siege(urls_file):
     return Popen(['siege', '-i', '-f', urls_file])
 
 def test_during_siege(server):
-    while True:
-        print 'Test during siege'
-        topic = str(randint(1000, 9999))
-        sub_id = get_sub_id(server, topic)
-        post_url = 'http://%s/topics/%s/facts' % (server, topic)
-        post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
-        response = urlopen(Request(post_url, post_data))
-        print 'Topic %s, sub_id %s, post response %d' \
-            % (topic, sub_id, response.getcode())
-        sleep(1)
-
-        facts_url = 'http://%s/topics/%s/facts' % (server, topic)
-        response = urlopen(Request(facts_url))
-        returned_facts = loads(response.read())
-        num_facts = len(returned_facts)
-        print 'Fetch resp code %s, facts returned: %d' \
-            % (response.getcode(), len(returned_facts))
-        if num_facts != 1:
-            print 'ERROR!!! Wrong number of facts'
-        sleep(1)
-
+    error_count = 0
+    try:
+        while True:
+            print 'Test during siege'
+            topic = str(randint(1000, 9999))
+            sub_id = get_sub_id(server, topic)
+            post_url = 'http://%s/topics/%s/facts' % (server, topic)
+            post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
+            response = urlopen(Request(post_url, post_data))
+            print 'Topic %s, sub_id %s, post response %d' \
+                % (topic, sub_id, response.getcode())
+            sleep(1)
+            
+            facts_url = 'http://%s/topics/%s/facts' % (server, topic)
+            response = urlopen(Request(facts_url))
+            returned_facts = loads(response.read())
+            num_facts = len(returned_facts)
+            print 'Fetch resp code %s, facts returned: %d' \
+                % (response.getcode(), len(returned_facts))
+            if num_facts != 1:
+                print '\033[91m' + 'ERROR!!! Wrong number of facts' + '\033[0m'
+                error_count += 1
+            sleep(1)
+    except KeyboardInterrupt:
+        print 'Wrong number of facts returned: %d times' % (error_count,)
+        raise
+                
 def run():
     server = parse_args(argv)
     sub_ids = get_sub_ids(server)
