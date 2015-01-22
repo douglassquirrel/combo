@@ -41,9 +41,11 @@ def start_siege(urls_file):
     return Popen(['siege', '-i', '-f', urls_file])
 
 def test_during_siege(server):
+    test_count = 0
     error_count = 0
     try:
         while True:
+            test_count += 1
             print 'Test during siege'
             topic = str(randint(1000, 9999))
             sub_id = get_sub_id(server, topic)
@@ -65,7 +67,8 @@ def test_during_siege(server):
                 error_count += 1
             sleep(1)
     except KeyboardInterrupt:
-        print 'Wrong number of facts returned: %d times' % (error_count,)
+        print 'Wrong number of facts returned: %d times out of %d tries' \
+            % (error_count, test_count)
         raise
                 
 def run():
