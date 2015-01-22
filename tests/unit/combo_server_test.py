@@ -122,7 +122,7 @@ class ComboServerTest(TestCase):
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         self._assertResponseJSON('Should get latest fact',
                                  self.client.get(url), 200, TEST_FACTS[0])
-        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 2)
 
     def test_get_fact_from_nonexistent_subscription(self):
         self.app.config['ERROR_OUT'] = Devnull()
@@ -140,7 +140,7 @@ class ComboServerTest(TestCase):
         url = '/topics/%s/subscriptions/%s/next' % (TEST_TOPIC, TEST_SUB_ID)
         self._assertResponsePlain('Should time out and return 204',
                                   self.client.get(url), 204, 'text/plain', '')
-        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 10)
+        pubsub.fetch_from_sub.assert_called_with(TEST_TOPIC, TEST_SUB_ID, 2)
 
     def test_get_fact_from_subscription_with_specified_timeout(self):
         self._mock_factspace()

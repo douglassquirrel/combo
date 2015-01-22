@@ -51,7 +51,7 @@ def get_facts(topic):
 @app.route('/topics/<topic>/subscriptions/<sub_id>/next', methods=['GET'])
 def get_next_fact_from_sub(topic, sub_id):
     try:
-        patience_string = request.headers.get('Patience', '10')
+        patience_string = request.headers.get('Patience', '2')
         if patience_string == '' or not _is_valid_int_string(patience_string):
             return _bad_request()
         timeout = int(patience_string)

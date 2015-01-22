@@ -54,7 +54,7 @@ class PubSubTest(TestCase):
                                    routing_key='fetch_from_sub_test_topic',
                                    body=dumps(FACT))
         fact = self.pubsub.fetch_from_sub('fetch_from_sub_test_topic',
-                                          queue, 10)
+                                          queue, 2)
         self.assertEqual(fact, FACT)
 
     def test_fetch_from_sub_timeout(self):
