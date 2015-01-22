@@ -1,5 +1,4 @@
 flask
-gevent
 gunicorn
 mock
 nose
