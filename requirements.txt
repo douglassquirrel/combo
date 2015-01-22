@@ -1,7 +1,6 @@
 flask
 gevent
 gunicorn
-haigha
 mock
 nose
 pika
