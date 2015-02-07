@@ -34,7 +34,7 @@ class PubSub:
 
     def subscribe(self, topic):
         self._check_channel()
-        for i in range(0, 10):
+        for i in range(0, 1):
             try:
                 queue = self._get_queue(topic)
                 return queue
@@ -70,7 +70,7 @@ class PubSub:
             raise PubSubError(e)
 
     def _check_queue_retry(self, queue):
-        for i in range(0, 10):
+        for i in range(0, 1):
             try:
                 result = self.channel.basic_get(queue=queue, no_ack=True)[2]
                 return result
