@@ -6,7 +6,7 @@ from shutil import copyfileobj
 from subprocess import Popen
 from sys import argv, exit
 from tempfile import mkstemp
-from time import sleep
+from time import sleep, time
 from urllib2 import Request, urlopen
 
 print 'Starting siege driver'
@@ -41,13 +41,14 @@ def start_siege(urls_file):
     return Popen(['siege', '-i', '-f', urls_file])
 
 def test_during_siege(server):
+    start_time = int(time())
     test_count = 0
     error_count = 0
     try:
         while True:
             test_count += 1
             print 'Test during siege'
-            topic = str(test_count)
+            topic = str(start_time + test_count)
             sub_id = get_sub_id(server, topic)
             post_url = 'http://%s/topics/%s/facts' % (server, topic)
             post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
