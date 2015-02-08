@@ -74,7 +74,7 @@ class PubSub:
             try:
                 result = self.channel.basic_get(queue=queue, no_ack=True)[2]
                 return result
-            except AssertionError as e:
+            except AssertionError:
                 stderr.write('Try %d to check queue failed\n' % (i,))
                 self._create_connection()
                 self._create_channel_and_exchange()

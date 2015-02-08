@@ -2,7 +2,6 @@
 
 from web.reset import recreate_facts_table
 from json import dumps
-from mock import Mock
 from sys import exit
 from traceback import print_exc
 from unittest import TestCase
@@ -47,7 +46,7 @@ class FactspaceTest(TestCase):
         self.assertFalse(self._facts_table_exists(),
                          'Should be no facts table after drop')
         try:
-            factspace = Factspace(PG_URL)
+            Factspace(PG_URL)
             self.fail('Should fail when no facts table')
         except MissingTableError:
             pass #expected

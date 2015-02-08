@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from flask import Flask, Response, request, url_for
-from json import dumps, loads
+from json import dumps
 from logging import INFO, StreamHandler
 from os import environ
 from os.path import dirname, join as pathjoin
@@ -63,7 +63,7 @@ def get_next_fact_from_sub(topic, sub_id):
             return _respond_json(result)
         else:
             return _respond('', 'text/plain', 204)
-    except PubSubError as e:
+    except PubSubError:
         print_exc(file=app.config['ERROR_OUT'])
         return _respond('', 'text/plain', 404)
 

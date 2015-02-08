@@ -6,7 +6,7 @@ from logging import getLogger, WARNING
 from pika import BlockingConnection, URLParameters
 from Queue import Empty, Queue as PythonQueue
 from sys import exit
-from time import sleep, time as now
+from time import sleep
 from threading import Thread
 from traceback import print_exc
 from unittest import TestCase
@@ -69,9 +69,9 @@ class PubSubTest(TestCase):
 
     def test_fetch_from_sub_with_nonexistent_sub_id(self):
         try:
-            fact = self.pubsub.fetch_from_sub('fetch_from_sub_bad_id_test',
-                                          'does_not_exist', 1)
-            fail('Should raise PubSubError when sub id does not exist')
+            self.pubsub.fetch_from_sub('fetch_from_sub_bad_id_test',
+                                       'does_not_exist', 1)
+            self.fail('Should raise PubSubError when sub id does not exist')
         except PubSubError:
             pass # Expected
 

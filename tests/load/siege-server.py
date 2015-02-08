@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 from json import loads
-from random import randint
 from shutil import copyfileobj
 from subprocess import Popen
 from sys import argv, exit

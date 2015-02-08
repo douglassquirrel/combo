@@ -141,7 +141,7 @@ class HTTPTest(TestCase):
     def _wait_on_sub(self, topic, sub_id):
         conn = HTTPConnection(self.url, self.port)
         path = '/topics/%s/subscriptions/%s/next' % (topic, sub_id)
-        response = conn.request('GET', path, '', {'Patience': '2'})
+        conn.request('GET', path, '', {'Patience': '2'})
         conn.getresponse().read()
 
     def _extract_fact_ids(self, response):
