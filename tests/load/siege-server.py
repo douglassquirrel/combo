@@ -6,6 +6,7 @@ from subprocess import Popen
 from sys import argv, exit
 from tempfile import mkstemp
 from time import sleep, time
+from traceback import print_exc
 from urllib2 import Request, urlopen
 
 print 'Starting siege driver'
