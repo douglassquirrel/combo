@@ -48,7 +48,7 @@ def test_during_siege(server):
         while True:
             test_count += 1
             print 'Test during siege'
-            topic = str(start_time + test_count)
+            topic = str(start_time * 10000 + test_count)
             sub_id = get_sub_id(server, topic)
             post_url = 'http://%s/topics/%s/facts' % (server, topic)
             post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
