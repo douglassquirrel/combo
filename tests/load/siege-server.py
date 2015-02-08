@@ -43,32 +43,42 @@ def test_during_siege(server):
     start_time = int(time())
     test_count = 0
     error_count = 0
+    exception_count = 0
     try:
         while True:
-            test_count += 1
-            print 'Test during siege'
-            topic = str(start_time * 10000 + test_count)
-            sub_id = get_sub_id(server, topic)
-            post_url = 'http://%s/topics/%s/facts' % (server, topic)
-            post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
-            response = urlopen(Request(post_url, post_data))
-            print 'Topic %s, sub_id %s, post response %d' \
-                % (topic, sub_id, response.getcode())
-            sleep(1)
+            try:
+                test_count += 1
+                print 'Test during siege'
+                topic = str(start_time * 10000 + test_count)
+                sub_id = get_sub_id(server, topic)
+                post_url = 'http://%s/topics/%s/facts' % (server, topic)
+                post_data = '{"test": "Under siege!", "topic": %s}' % (topic,)
+                response = urlopen(Request(post_url, post_data))
+                print 'Topic %s, sub_id %s, post response %d' \
+                    % (topic, sub_id, response.getcode())
+                sleep(1)
             
-            facts_url = 'http://%s/topics/%s/facts' % (server, topic)
-            response = urlopen(Request(facts_url))
-            returned_facts = loads(response.read())
-            num_facts = len(returned_facts)
-            print 'Fetch resp code %s, facts returned: %d' \
-                % (response.getcode(), len(returned_facts))
-            if num_facts != 1:
-                print '\033[91m' + 'ERROR!!! Wrong number of facts' + '\033[0m'
-                error_count += 1
-            sleep(1)
+                facts_url = 'http://%s/topics/%s/facts' % (server, topic)
+                response = urlopen(Request(facts_url))
+                returned_facts = loads(response.read())
+                num_facts = len(returned_facts)
+                print 'Fetch resp code %s, facts returned: %d' \
+                    % (response.getcode(), len(returned_facts))
+                if num_facts != 1:
+                    print '\033[91m' + 'ERROR!!! Wrong number of facts' \
+                        + '\033[0m'
+                    error_count += 1
+                sleep(1)
+            except KeyboardInterrupt:
+                raise
+            except:
+                print_exc()
+                exception_count += 1
     except KeyboardInterrupt:
         print 'Wrong number of facts returned: %d times out of %d tries' \
             % (error_count, test_count)
+        print 'Exception count: %d out of %d tries' \
+            % (exception_count, test_count)
         raise
                 
 def run():
