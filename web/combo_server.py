@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 from flask import Flask, Response, request, url_for
+from flask.ext.cors import CORS
 from json import dumps
 from logging import INFO, StreamHandler
 from os import environ
@@ -9,6 +10,7 @@ from web.pubsub import PubSubError
 from traceback import print_exc
 
 app = Flask('combo')
+CORS(app, resources=r'*', allow_headers='Content-Type')
 
 @app.route('/')
 def home():
