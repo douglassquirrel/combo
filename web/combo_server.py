@@ -10,7 +10,7 @@ from web.pubsub import PubSubError
 from traceback import print_exc
 
 app = Flask('combo')
-CORS(app, resources=r'*', allow_headers='Content-Type')
+CORS(app, resources=r'*', allow_headers='Content-Type,Patience')
 
 @app.route('/')
 def home():
