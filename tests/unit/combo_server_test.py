@@ -199,8 +199,12 @@ class ComboServerTest(TestCase):
         self.assertEqual(status_code, response.status_code, msg=msg)        
         self.assertEqual(content_type, response.content_type, msg=msg)
         self.assertEqual(data, transformer(response.data), msg=msg)
+        self.assertIn('Cache-control', response.headers)
+        self.assertIn('Access-Control-Allow-Origin', response.headers)
         self.assertEqual('no-cache, must-revalidate',
                          response.headers['Cache-control'])
+        self.assertEqual('*',
+                         response.headers['Access-Control-Allow-Origin'])
         expires = datetime.strptime(response.headers['Expires'],
                                     '%a, %d %b %Y %H:%M:%S GMT')
         self._assertIsInPast(expires, 'Should expire in the past')
