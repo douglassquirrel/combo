@@ -90,6 +90,7 @@ def _respond(data, mimetype, status=200):
     response.status_code = status
     response.headers.add('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT')
     response.headers.add('Cache-control', 'no-cache, must-revalidate')
+    response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 def _respond_json(data):
